@@ -1,5 +1,43 @@
 # EveryPoll Changelog
 
+## Step 7: Feed and Search Routes (2025-04-04)
+
+- Implemented paginated poll feed and search functionality:
+  - Created GET /api/feed endpoint with pagination, sorting, and search capabilities
+  - Added GET /api/feed/search as an alias for search-focused feed retrieval
+  - Implemented GET /api/poll/:id/search for finding polls to cross-reference
+  - Enhanced database utilities to support advanced query options
+- Added advanced database query capabilities:
+  - Extended poll retrieval with flexible filtering and sorting options
+  - Implemented text-based search functionality for poll questions
+  - Added cross-reference candidate filtering to exclude already referenced polls
+  - Optimized query performance with efficient SQL construction
+- Created robust pagination support:
+  - Implemented limit and offset parameters for all feed endpoints
+  - Added total count for proper client-side pagination handling
+  - Included hasMore flag to indicate if more results are available
+  - Enforced pagination limits for performance and security
+- Enhanced search capabilities:
+  - Text-based search across poll questions
+  - Integration with pagination for handling large result sets
+  - Parameter validation and error handling for search queries
+  - Filtering for cross-reference candidates with exclusion support
+- Implemented sorting options:
+  - Newest first sorting (default)
+  - Oldest first sorting option
+  - Parameter validation for sort options
+- Enhanced response formatting:
+  - Included author information with each poll
+  - Added vote counts for authenticated users
+  - Structured pagination metadata for client convenience
+  - Maintained consistent response formats across endpoints
+- Created comprehensive tests for all new functionality:
+  - Feed pagination with different parameters
+  - Search functionality with various query terms
+  - Cross-reference search with exclusions
+  - Sorting behavior verification
+  - Parameter validation and error handling
+
 ## Step 6: Cross-Reference Functionality (2025-04-04)
 
 - Enhanced poll retrieval endpoint to support cross-referencing:

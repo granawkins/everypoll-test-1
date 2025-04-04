@@ -258,17 +258,70 @@ export class DatabaseUtils {
   }
 
   /**
-   * Gets polls with pagination
-   * @param limit Maximum number of polls to return
-   * @param offset Number of polls to skip
-   * @returns Array of polls with answers
+   * Gets polls with pagination, sorting, and optional filtering
+   * @param options Object with pagination, sorting, and filtering options
+   * @returns Object containing array of polls with answers and total count
    */
-  getPolls(limit: number = 10, offset: number = 0): { poll: Poll; answers: Answer[] }[] {
-    const pollRows = this.db.prepare(
-      'SELECT * FROM Polls ORDER BY created_at DESC LIMIT ? OFFSET ?'
-    ).all(limit, offset) as PollRow[];
+  getPolls(options: {
+    limit?: number;
+    offset?: number;
+    sortBy?: 'newest' | 'oldest';
+    query?: string;
+    authorId?: string;
+  } = {}): { polls: { poll: Poll; answers: Answer[] }[]; totalCount: number }  {
+    // Set default values
+    const { 
+      limit = 10, 
+      offset = 0, 
+      sortBy = 'newest', 
+      query = null, 
+      authorId = null 
+    } = options;
     
-    return pollRows.map(row => {
+    // Build WHERE clause
+    const whereClauses = [];
+    const params = [];
+    
+    if (query) {
+      whereClauses.push('question LIKE ?');
+      params.push(`%${query}%`);
+    }
+    
+    if (authorId) {
+      whereClauses.push('author_id = ?');
+      params.push(authorId);
+    }
+    
+    const whereClause = whereClauses.length > 0 
+      ? `WHERE ${whereClauses.join(' AND ')}` 
+      : '';
+    
+    // Set sorting order
+    const order = sortBy === 'oldest' ? 'ASC' : 'DESC';
+    
+    // Get total count for pagination
+    const countSql = `
+      SELECT COUNT(*) as count 
+      FROM Polls 
+      ${whereClause}
+    `;
+    const countResult = this.db.prepare(countSql).get(...params) as { count: number };
+    const totalCount = countResult ? countResult.count : 0;
+    
+    // Get poll rows
+    const sql = `
+      SELECT * FROM Polls 
+      ${whereClause}
+      ORDER BY created_at ${order}
+      LIMIT ? OFFSET ?
+    `;
+    
+    // Create a copy of params and add limit/offset
+    const queryParams = [...params, limit, offset];
+    const pollRows = this.db.prepare(sql).all(...queryParams) as PollRow[];
+    
+    // Map to poll objects with answers
+    const polls = pollRows.map(row => {
       const poll: Poll = {
         id: row.id,
         author_id: row.author_id,
@@ -285,6 +338,106 @@ export class DatabaseUtils {
       
       return { poll, answers };
     });
+    
+    return { polls, totalCount };
+  }
+  
+  /**
+   * Searches for polls by query string
+   * @param query Search query string
+   * @param limit Maximum number of polls to return
+   * @param offset Number of polls to skip
+   * @returns Array of polls with answers that match the query
+   */
+  searchPolls(query: string, limit: number = 10, offset: number = 0): { polls: { poll: Poll; answers: Answer[] }[]; totalCount: number } {
+    return this.getPolls({
+      query,
+      limit,
+      offset
+    });
+  }
+  
+  /**
+   * Gets polls that can be cross-referenced with a given poll
+   * This excludes the main poll and considers any existing cross-references
+   * @param mainPollId ID of the poll to find cross-references for
+   * @param query Optional search query
+   * @param excludePollIds Array of poll IDs to exclude (e.g., already cross-referenced polls)
+   * @param limit Maximum number of polls to return
+   * @param offset Number of polls to skip
+   * @returns Array of polls with answers suitable for cross-referencing
+   */
+  getCrossReferenceCandidates(
+    mainPollId: string,
+    options: {
+      query?: string;
+      excludePollIds?: string[];
+      limit?: number;
+      offset?: number;
+    } = {}
+  ): { polls: { poll: Poll; answers: Answer[] }[]; totalCount: number } {
+    const { 
+      query = null, 
+      excludePollIds = [], 
+      limit = 10, 
+      offset = 0 
+    } = options;
+    
+    // Always exclude the main poll
+    const allExcludedIds = [...excludePollIds, mainPollId];
+    
+    // Build WHERE clause
+    const whereClauses = ['id NOT IN (' + allExcludedIds.map(() => '?').join(',') + ')'];
+    const params = [...allExcludedIds];
+    
+    if (query) {
+      whereClauses.push('question LIKE ?');
+      params.push(`%${query}%`);
+    }
+    
+    const whereClause = `WHERE ${whereClauses.join(' AND ')}`;
+    
+    // Get total count
+    const countSql = `
+      SELECT COUNT(*) as count 
+      FROM Polls 
+      ${whereClause}
+    `;
+    const countResult = this.db.prepare(countSql).get(...params) as { count: number };
+    const totalCount = countResult ? countResult.count : 0;
+    
+    // Get poll rows
+    const sql = `
+      SELECT * FROM Polls 
+      ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+    
+    // Create a copy of params and add limit/offset
+    const queryParams = [...params, limit, offset];
+    const pollRows = this.db.prepare(sql).all(...queryParams) as PollRow[];
+    
+    // Map to poll objects with answers
+    const polls = pollRows.map(row => {
+      const poll: Poll = {
+        id: row.id,
+        author_id: row.author_id,
+        created_at: row.created_at,
+        question: row.question
+      };
+      
+      const answerRows = this.db.prepare('SELECT * FROM Answers WHERE poll_id = ?').all(poll.id) as AnswerRow[];
+      const answers: Answer[] = answerRows.map(aRow => ({
+        id: aRow.id,
+        poll_id: aRow.poll_id,
+        text: aRow.text
+      }));
+      
+      return { poll, answers };
+    });
+    
+    return { polls, totalCount };
   }
 
   // ========== Vote Operations ==========

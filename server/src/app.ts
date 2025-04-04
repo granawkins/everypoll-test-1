@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import { db } from './database';
 import { authRoutes, authenticate } from './auth';
 import { pollRoutes } from './polls';
+import { feedRoutes } from './feed';
 
 export const app = express();
 export const PORT = process.env.PORT || 5000;
@@ -39,6 +40,9 @@ app.use('/api/auth', authRoutes);
 
 // Poll routes
 app.use('/api/poll', pollRoutes);
+
+// Feed routes
+app.use('/api/feed', feedRoutes);
 
 // Interface for database table info
 interface TableInfo {
