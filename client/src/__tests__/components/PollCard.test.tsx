@@ -19,12 +19,27 @@ interface Author {
   name: string | null;
 }
 
+interface CrossReference {
+  pollId: string;
+  answerId: string;
+  poll: {
+    id: string;
+    question: string;
+  };
+  answer: {
+    id: string;
+    text: string;
+  };
+  voteCounts: Record<string, number>;
+}
+
 interface PollData {
   poll: Poll;
   answers: Answer[];
   author: Author;
   voteCounts: Record<string, number>;
   userVote: { answerId: string } | null;
+  crossReferences?: CrossReference[];
 }
 
 interface VoteResponse {
@@ -44,10 +59,24 @@ interface ErrorResponse {
   message: string;
 }
 
+interface SearchResponse {
+  polls: Array<{
+    poll: Poll;
+    answers: Answer[];
+    author: Author;
+  }>;
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+}
+
 // Type for the fetch response
 interface MockResponse {
   ok: boolean;
-  json: () => Promise<PollData | VoteResponse | ErrorResponse>;
+  json: () => Promise<PollData | VoteResponse | ErrorResponse | SearchResponse>;
 }
 
 // Mock the fetch function
@@ -74,9 +103,72 @@ const mockPollData: PollData = {
   userVote: null,
 };
 
+// Mock data with existing vote
+const pollDataWithVote: PollData = {
+  ...mockPollData,
+  voteCounts: {
+    'answer-1': 2,
+    'answer-2': 1,
+  },
+  userVote: {
+    answerId: 'answer-1',
+  },
+};
+
+// Mock data for cross-reference search results
+const mockSearchResults: SearchResponse = {
+  polls: [
+    {
+      poll: {
+        id: 'poll-456',
+        question: 'What is your favorite food?',
+        created_at: '2025-04-01T12:00:00Z',
+      },
+      answers: [
+        { id: 'answer-4', text: 'Pizza' },
+        { id: 'answer-5', text: 'Sushi' },
+      ],
+      author: {
+        id: 'user-456',
+        name: 'Another User',
+      },
+    },
+  ],
+  pagination: {
+    total: 1,
+    limit: 10,
+    offset: 0,
+    hasMore: false,
+  },
+};
+
+// Mock data for poll with cross-references
+const mockPollWithCrossRef: PollData = {
+  ...pollDataWithVote,
+  crossReferences: [
+    {
+      pollId: 'poll-456',
+      answerId: 'answer-4',
+      poll: {
+        id: 'poll-456',
+        question: 'What is your favorite food?',
+      },
+      answer: {
+        id: 'answer-4',
+        text: 'Pizza',
+      },
+      voteCounts: {
+        'answer-1': 1,
+        'answer-2': 0,
+        'answer-3': 0,
+      },
+    },
+  ],
+};
+
 // Mock response for fetch
 const mockFetchResponse = (
-  data: PollData | VoteResponse | ErrorResponse, 
+  data: PollData | VoteResponse | ErrorResponse | SearchResponse, 
   ok = true
 ): MockResponse => {
   return {
@@ -157,18 +249,6 @@ describe('PollCard Component', () => {
   });
 
   it('should display column chart after voting', async () => {
-    // Mock data with existing vote
-    const pollDataWithVote: PollData = {
-      ...mockPollData,
-      voteCounts: {
-        'answer-1': 2,
-        'answer-2': 1,
-      },
-      userVote: {
-        answerId: 'answer-1',
-      },
-    };
-    
     render(<PollCard pollData={pollDataWithVote} />);
     
     // Check if percentages are displayed
@@ -268,5 +348,246 @@ describe('PollCard Component', () => {
     await waitFor(() => {
       expect(screen.getByText(/Error:/)).toBeInTheDocument();
     });
+  });
+
+  /* Cross-reference tests */
+
+  it('should display cross-reference button after voting', async () => {
+    render(<PollCard pollData={pollDataWithVote} />);
+    
+    // Cross-reference button should be visible after voting
+    expect(screen.getByText('Cross-reference with another poll')).toBeInTheDocument();
+  });
+
+  it('should display cross-reference search when button is clicked', async () => {
+    render(<PollCard pollData={pollDataWithVote} />);
+    
+    // Click the cross-reference button
+    fireEvent.click(screen.getByText('Cross-reference with another poll'));
+    
+    // Search interface should appear
+    expect(screen.getByText('Search for a poll to cross-reference')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search for polls...')).toBeInTheDocument();
+    expect(screen.getByText('Search')).toBeInTheDocument();
+  });
+
+  it('should search for polls to cross-reference', async () => {
+    mockFetch.mockResolvedValueOnce(
+      mockFetchResponse(mockSearchResults)
+    );
+    
+    render(<PollCard pollData={pollDataWithVote} />);
+    
+    // Click the cross-reference button
+    fireEvent.click(screen.getByText('Cross-reference with another poll'));
+    
+    // Type a search query
+    const searchInput = screen.getByPlaceholderText('Search for polls...');
+    fireEvent.change(searchInput, { target: { value: 'food' } });
+    
+    // Click the search button
+    fireEvent.click(screen.getByText('Search'));
+    
+    // Check if API was called correctly
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        '/api/poll/poll-123/search?q=food'
+      );
+    });
+    
+    // Search results should appear
+    await waitFor(() => {
+      expect(screen.getByText('What is your favorite food?')).toBeInTheDocument();
+      expect(screen.getByText('by Another User')).toBeInTheDocument();
+      expect(screen.getByText('Pizza')).toBeInTheDocument();
+      expect(screen.getByText('Sushi')).toBeInTheDocument();
+    });
+  });
+
+  it('should add a cross-reference when a poll answer is selected', async () => {
+    // First, mock the search response
+    mockFetch.mockResolvedValueOnce(
+      mockFetchResponse(mockSearchResults)
+    );
+    
+    // Then, mock the poll with cross-reference response
+    mockFetch.mockResolvedValueOnce(
+      mockFetchResponse(mockPollWithCrossRef)
+    );
+    
+    render(<PollCard pollData={pollDataWithVote} />);
+    
+    // Click the cross-reference button
+    fireEvent.click(screen.getByText('Cross-reference with another poll'));
+    
+    // Click the search button without typing (should search with empty query)
+    fireEvent.click(screen.getByText('Search'));
+    
+    // Wait for search results
+    await waitFor(() => {
+      expect(screen.getByText('What is your favorite food?')).toBeInTheDocument();
+    });
+    
+    // Click on an answer to select it for cross-reference
+    fireEvent.click(screen.getByText('Pizza'));
+    
+    // Check if API was called to fetch poll with cross-reference
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        '/api/poll/poll-123?p1=poll-456&a1=answer-4'
+      );
+    });
+    
+    // Cross-reference sub-charts should appear
+    await waitFor(() => {
+      expect(screen.getByText('Results filtered by "Pizza" voters')).toBeInTheDocument();
+    });
+  });
+
+  it('should display sub-charts for cross-referenced results', async () => {
+    render(<PollCard pollData={mockPollWithCrossRef} />);
+    
+    // Cross-reference sub-charts heading should be visible
+    expect(screen.getByText('Results filtered by "Pizza" voters')).toBeInTheDocument();
+    
+    // Sub-charts should be present
+    const subChartBars = document.querySelectorAll('.cross-reference-sub-chart-bar');
+    expect(subChartBars.length).toBe(3); // One for each answer in the original poll
+    
+    // Check if percentages in the sub-charts are correct
+    // In our mock data, only 'answer-1' has votes (100%)
+    expect(screen.getByText('100%')).toBeInTheDocument();
+  });
+
+  it('should update main chart when clicking on a sub-chart', async () => {
+    render(<PollCard pollData={mockPollWithCrossRef} />);
+    
+    // Get all sub-charts
+    const subCharts = document.querySelectorAll('.cross-reference-sub-chart');
+    
+    // Click on the first sub-chart (Red)
+    fireEvent.click(subCharts[0]);
+    
+    // Explanatory text should appear
+    expect(screen.getByText(/Showing results for Red voters/)).toBeInTheDocument();
+    
+    // The sub-chart should have the 'is-active' class
+    expect(subCharts[0].classList.contains('is-active')).toBe(true);
+  });
+
+  it('should display cross-reference selector with multiple cross-references', async () => {
+    // Create mock data with multiple cross-references
+    const multiCrossRefData: PollData = {
+      ...pollDataWithVote,
+      crossReferences: [
+        {
+          pollId: 'poll-456',
+          answerId: 'answer-4',
+          poll: {
+            id: 'poll-456',
+            question: 'What is your favorite food?',
+          },
+          answer: {
+            id: 'answer-4',
+            text: 'Pizza',
+          },
+          voteCounts: {
+            'answer-1': 1,
+            'answer-2': 0,
+            'answer-3': 0,
+          },
+        },
+        {
+          pollId: 'poll-789',
+          answerId: 'answer-6',
+          poll: {
+            id: 'poll-789',
+            question: 'What is your favorite animal?',
+          },
+          answer: {
+            id: 'answer-6',
+            text: 'Dog',
+          },
+          voteCounts: {
+            'answer-1': 0,
+            'answer-2': 1,
+            'answer-3': 0,
+          },
+        },
+      ],
+    };
+    
+    render(<PollCard pollData={multiCrossRefData} />);
+    
+    // Cross-reference selector should be visible
+    expect(screen.getByText('Cross-referenced polls:')).toBeInTheDocument();
+    
+    // Both cross-references should be visible
+    expect(screen.getByText('What is your favorite food?')).toBeInTheDocument();
+    expect(screen.getByText('What is your favorite animal?')).toBeInTheDocument();
+    
+    // The first one should be selected by default (have active class)
+    const selectorItems = document.querySelectorAll('.cross-reference-selector-item');
+    expect(selectorItems[0].classList.contains('is-selected')).toBe(true);
+  });
+
+  it('should switch between cross-references when selector is clicked', async () => {
+    // Create mock data with multiple cross-references
+    const multiCrossRefData: PollData = {
+      ...pollDataWithVote,
+      crossReferences: [
+        {
+          pollId: 'poll-456',
+          answerId: 'answer-4',
+          poll: {
+            id: 'poll-456',
+            question: 'What is your favorite food?',
+          },
+          answer: {
+            id: 'answer-4',
+            text: 'Pizza',
+          },
+          voteCounts: {
+            'answer-1': 1,
+            'answer-2': 0,
+            'answer-3': 0,
+          },
+        },
+        {
+          pollId: 'poll-789',
+          answerId: 'answer-6',
+          poll: {
+            id: 'poll-789',
+            question: 'What is your favorite animal?',
+          },
+          answer: {
+            id: 'answer-6',
+            text: 'Dog',
+          },
+          voteCounts: {
+            'answer-1': 0,
+            'answer-2': 1,
+            'answer-3': 0,
+          },
+        },
+      ],
+    };
+    
+    render(<PollCard pollData={multiCrossRefData} />);
+    
+    // Both cross-references should be visible in selector
+    const selectorItems = document.querySelectorAll('.cross-reference-selector-item');
+    
+    // Results filtered by "Pizza" voters should be visible initially
+    expect(screen.getByText('Results filtered by "Pizza" voters')).toBeInTheDocument();
+    
+    // Click on the second cross-reference
+    fireEvent.click(selectorItems[1]);
+    
+    // Results filtered by "Dog" voters should now be visible
+    expect(screen.getByText('Results filtered by "Dog" voters')).toBeInTheDocument();
+    
+    // The second item should now have the selected class
+    expect(selectorItems[1].classList.contains('is-selected')).toBe(true);
   });
 });
