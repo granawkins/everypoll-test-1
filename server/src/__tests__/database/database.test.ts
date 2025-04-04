@@ -243,15 +243,15 @@ describe('Database Tests', () => {
       }
       
       // Get first 2 polls
-      const firstPage = dbUtils.getPolls(2, 0);
-      expect(firstPage.length).toBe(2);
+      const firstPage = dbUtils.getPolls({ limit: 2, offset: 0 });
+      expect(firstPage.polls.length).toBe(2);
       
       // Get next 2 polls
-      const secondPage = dbUtils.getPolls(2, 2);
-      expect(secondPage.length).toBe(2);
+      const secondPage = dbUtils.getPolls({ limit: 2, offset: 2 });
+      expect(secondPage.polls.length).toBe(2);
       
       // Make sure they're different
-      expect(firstPage[0].poll.id).not.toBe(secondPage[0].poll.id);
+      expect(firstPage.polls[0].poll.id).not.toBe(secondPage.polls[0].poll.id);
     });
     
     it('should enforce poll validation', () => {
