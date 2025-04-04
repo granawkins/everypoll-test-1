@@ -460,10 +460,14 @@ describe('PollCard Component', () => {
   });
 
   it('should update main chart when clicking on a sub-chart', async () => {
-    render(<PollCard pollData={mockPollWithCrossRef} />);
+    const { container } = render(<PollCard pollData={mockPollWithCrossRef} />);
     
-    // Get all sub-charts
-    const subCharts = document.querySelectorAll('.cross-reference-sub-chart');
+    // First verify the cross-reference sub-charts section is visible
+    expect(screen.getByText('Results filtered by "Pizza" voters')).toBeInTheDocument();
+    
+    // Get all sub-charts from container
+    const subCharts = container.querySelectorAll('.cross-reference-sub-chart');
+    expect(subCharts.length).toBe(3); // Should have one for each answer
     
     // Click on the first sub-chart (Red)
     fireEvent.click(subCharts[0]);
