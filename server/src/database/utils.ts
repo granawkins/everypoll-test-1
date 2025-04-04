@@ -279,7 +279,7 @@ export class DatabaseUtils {
     } = options;
     
     // Build WHERE clause
-    let whereClauses = [];
+    const whereClauses = [];
     const params = [];
     
     if (query) {
@@ -387,7 +387,7 @@ export class DatabaseUtils {
     const allExcludedIds = [...excludePollIds, mainPollId];
     
     // Build WHERE clause
-    let whereClauses = ['id NOT IN (' + allExcludedIds.map(() => '?').join(',') + ')'];
+    const whereClauses = ['id NOT IN (' + allExcludedIds.map(() => '?').join(',') + ')'];
     const params = [...allExcludedIds];
     
     if (query) {

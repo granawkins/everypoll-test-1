@@ -3,7 +3,30 @@ import { app } from '../../app';
 import { reinitializeTestDatabase } from '../../database/init';
 import { dbUtils } from '../../database';
 import { createToken, AUTH_COOKIE_NAME } from '../../auth';
-import { User } from '../../database/utils';
+import { User, Poll, Answer } from '../../database/utils';
+
+// Type for poll objects returned in API responses
+interface PollWithDetails {
+  poll: {
+    id: string;
+    question: string;
+    author_id: string;
+    created_at: string;
+  };
+  answers: {
+    id: string;
+    text: string;
+    poll_id: string;
+  }[];
+  author?: {
+    id: string;
+    name: string | null;
+  };
+  voteCounts?: Record<string, number>;
+  userVote?: {
+    answerId: string;
+  } | null;
+}
 
 describe('Feed API Endpoints', () => {
   let testUser: User;
@@ -145,7 +168,7 @@ describe('Feed API Endpoints', () => {
       
       // Verify all returned polls contain the search term
       const allPollsContainTerm = response.body.polls.every(
-        (poll: any) => poll.poll.question.includes(uniqueSearchTerm)
+        (poll: PollWithDetails) => poll.poll.question.includes(uniqueSearchTerm)
       );
       expect(allPollsContainTerm).toBe(true);
       
@@ -245,7 +268,7 @@ describe('Feed API Endpoints', () => {
       
       // The main poll should not be included in the results
       const mainPollIncluded = response.body.polls.some(
-        (poll: any) => poll.poll.id === mainPollResult.poll.id
+        (poll: PollWithDetails) => poll.poll.id === mainPollResult.poll.id
       );
       expect(mainPollIncluded).toBe(false);
     });
@@ -280,7 +303,7 @@ describe('Feed API Endpoints', () => {
       
       // Verify all returned polls contain the search term
       const allPollsContainTerm = response.body.polls.every(
-        (poll: any) => poll.poll.question.includes(uniqueSearchTerm)
+        (poll: PollWithDetails) => poll.poll.question.includes(uniqueSearchTerm)
       );
       expect(allPollsContainTerm).toBe(true);
     });
@@ -308,7 +331,7 @@ describe('Feed API Endpoints', () => {
       
       // Check if the poll to exclude is in the results
       const pollToExcludeIncluded = noExcludeResponse.body.polls.some(
-        (poll: any) => poll.poll.id === excludePollResult.poll.id
+        (poll: PollWithDetails) => poll.poll.id === excludePollResult.poll.id
       );
       
       // It should be included when not excluded
@@ -322,7 +345,7 @@ describe('Feed API Endpoints', () => {
       
       // Check if the poll to exclude is in the results
       const pollToExcludeExcluded = excludeResponse.body.polls.every(
-        (poll: any) => poll.poll.id !== excludePollResult.poll.id
+        (poll: PollWithDetails) => poll.poll.id !== excludePollResult.poll.id
       );
       
       // It should be excluded when specified
