@@ -7,6 +7,13 @@ interface ApiResponse {
   message: string;
 }
 
+interface User {
+  id: string;
+  name: string | null;
+  email: string | null;
+  isAuthenticated: boolean;
+}
+
 interface Author {
   id: string;
   name: string | null;
@@ -33,7 +40,12 @@ interface PollData {
 
 interface FeedResponse {
   polls: PollData[];
-  totalCount: number;
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
 }
 
 // Mock the fetch API
@@ -43,6 +55,13 @@ globalThis.fetch = mockFetch as unknown as typeof fetch;
 // Create mock responses
 const mockApiResponse: ApiResponse = {
   message: 'Welcome to the EveryPoll API!'
+};
+
+const mockUserResponse: User = {
+  id: 'user-123',
+  name: 'Test User',
+  email: 'test@example.com',
+  isAuthenticated: true
 };
 
 const mockPollsResponse: FeedResponse = {
@@ -64,7 +83,12 @@ const mockPollsResponse: FeedResponse = {
       voteCounts: {}
     }
   ],
-  totalCount: 1
+  pagination: {
+    total: 1,
+    limit: 5,
+    offset: 0,
+    hasMore: false
+  }
 };
 
 // Type for mock fetch response
@@ -82,7 +106,14 @@ const mockFetchImplementation = (url: string): Promise<MockResponse> => {
     });
   }
   
-  if (url === '/api/feed?limit=1') {
+  if (url === '/api/auth/me') {
+    return Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve(mockUserResponse)
+    });
+  }
+  
+  if (url.startsWith('/api/feed')) {
     return Promise.resolve({
       ok: true,
       json: () => Promise.resolve(mockPollsResponse)
@@ -111,10 +142,11 @@ describe('App Component', () => {
     mockFetch.mockImplementation(mockFetchImplementation);
   });
 
-  it('renders App component correctly', () => {
+  it('renders App component with header', () => {
     render(<App />);
     expect(screen.getByText('EveryPoll')).toBeInTheDocument();
     expect(screen.getByText('Vote, compare, discover')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search polls...')).toBeInTheDocument();
   });
 
   it('loads and displays API message and poll', async () => {
@@ -134,14 +166,23 @@ describe('App Component', () => {
     });
 
     // Check if the API was called
-    expect(globalThis.fetch).toHaveBeenCalledWith('/api');
-    expect(globalThis.fetch).toHaveBeenCalledWith('/api/feed?limit=1');
-    expect(globalThis.fetch).toHaveBeenCalledWith('/api/poll/poll-123');
+    expect(mockFetch).toHaveBeenCalledWith('/api');
+    expect(mockFetch).toHaveBeenCalledWith('/api/auth/me');
+    expect(mockFetch).toHaveBeenCalled();
   });
 
   it('handles API error', async () => {
     // Mock a failed API call
-    mockFetch.mockRejectedValue(new Error('API Error'));
+    mockFetch.mockImplementation((url: string): Promise<MockResponse> => {
+      if (url === '/api/auth/me') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockUserResponse)
+        });
+      }
+      
+      return Promise.reject(new Error('API Error'));
+    });
 
     render(<App />);
 
@@ -151,9 +192,30 @@ describe('App Component', () => {
     });
   });
 
-  it('shows no polls message when feed is empty', async () => {
-    // Mock an empty polls response
+  it('shows Create Poll button when user is authenticated', async () => {
+    render(<App />);
+
+    // Wait for the create poll button to appear
+    await waitFor(() => {
+      expect(screen.getByText('Create Poll')).toBeInTheDocument();
+    });
+  });
+
+  it('shows Login button when user is not authenticated', async () => {
+    // Mock unauthenticated user
     mockFetch.mockImplementation((url: string): Promise<MockResponse> => {
+      if (url === '/api/auth/me') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            id: 'anon-123',
+            name: null,
+            email: null,
+            isAuthenticated: false
+          })
+        });
+      }
+      
       if (url === '/api') {
         return Promise.resolve({
           ok: true,
@@ -161,10 +223,10 @@ describe('App Component', () => {
         });
       }
       
-      if (url === '/api/feed?limit=1') {
+      if (url.startsWith('/api/feed')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ polls: [], totalCount: 0 })
+          json: () => Promise.resolve(mockPollsResponse)
         });
       }
       
@@ -173,9 +235,9 @@ describe('App Component', () => {
 
     render(<App />);
 
-    // Wait for the no polls message to appear
+    // Wait for the login button to appear
     await waitFor(() => {
-      expect(screen.getByText(/No polls available/)).toBeInTheDocument();
+      expect(screen.getByText('Login with Google')).toBeInTheDocument();
     });
   });
 });

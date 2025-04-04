@@ -1,5 +1,36 @@
 # EveryPoll Changelog
 
+## Step 11: Header Component (2025-04-04)
+
+- Created sticky header component with logo, search, and user controls:
+  - Implemented Header component that stays fixed at the top of the viewport
+  - Added EveryPoll logo with custom checkmark icon
+  - Integrated search functionality that updates feed results
+  - Created conditional rendering for user login state (login button vs. avatar)
+  - Added "Create Poll" button for authenticated users
+- Implemented authentication integration:
+  - Connected to auth endpoints to determine user status
+  - Implemented login and logout functionality
+  - Added proper loading and error states for auth operations
+  - Created authenticated and unauthenticated UI states
+- Enhanced UI design for better user experience:
+  - Added glassmorphism effect with backdrop filter
+  - Created animated user avatar with hover effects
+  - Styled buttons for login and poll creation
+  - Implemented responsive design that works on all device sizes
+- Applied comprehensive state management:
+  - Managed user authentication state
+  - Integrated with parent component's search functionality
+  - Added proper error handling for API failures
+  - Implemented loading indicators for auth operations
+- Created extensive test suite:
+  - Verified sticky header positioning
+  - Tested search functionality and event handling
+  - Validated proper display of login button for unauthenticated users
+  - Confirmed avatar and create poll button for authenticated users
+  - Tested login/logout functionality and error handling
+  - Verified responsive behavior for different viewports
+
 ## Step 10: Feed Implementation (2025-04-04)
 
 - Created landing page with infinite scroll feed of polls:
