@@ -9,7 +9,6 @@ const router = express.Router();
 router.get('/:id', getPollById);
 
 // POST /api/poll - Create a new poll (protected route)
-// @ts-expect-error - Express handler compatibility issue with async function
 router.post('/', authenticate, requireAuth, createPoll);
 
 export default router;
