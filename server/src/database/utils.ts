@@ -31,6 +31,34 @@ export interface Vote {
   created_at: string;
 }
 
+// Internal types for database rows
+interface UserRow {
+  id: string;
+  email: string | null;
+  name: string | null;
+}
+
+interface PollRow {
+  id: string;
+  author_id: string;
+  created_at: string;
+  question: string;
+}
+
+interface AnswerRow {
+  id: string;
+  poll_id: string;
+  text: string;
+}
+
+interface VoteRow {
+  id: string;
+  poll_id: string;
+  answer_id: string;
+  user_id: string;
+  created_at: string;
+}
+
 // Internal types for query results
 interface VoteCountRow {
   answer_id: string;
@@ -72,13 +100,13 @@ export class DatabaseUtils {
    * @returns User or null if not found
    */
   getUserById(id: string): User | null {
-    const row = this.db.prepare('SELECT * FROM Users WHERE id = ?').get(id);
+    const row = this.db.prepare('SELECT * FROM Users WHERE id = ?').get(id) as UserRow | undefined;
     if (!row) return null;
     
     return {
-      id: row.id as string,
-      email: row.email as string | null,
-      name: row.name as string | null
+      id: row.id,
+      email: row.email,
+      name: row.name
     };
   }
 
@@ -88,13 +116,13 @@ export class DatabaseUtils {
    * @returns User or null if not found
    */
   getUserByEmail(email: string): User | null {
-    const row = this.db.prepare('SELECT * FROM Users WHERE email = ?').get(email);
+    const row = this.db.prepare('SELECT * FROM Users WHERE email = ?').get(email) as UserRow | undefined;
     if (!row) return null;
     
     return {
-      id: row.id as string,
-      email: row.email as string | null,
-      name: row.name as string | null
+      id: row.id,
+      email: row.email,
+      name: row.name
     };
   }
 
@@ -209,21 +237,21 @@ export class DatabaseUtils {
    * @returns Poll with answers or null if not found
    */
   getPollById(id: string): { poll: Poll; answers: Answer[] } | null {
-    const pollRow = this.db.prepare('SELECT * FROM Polls WHERE id = ?').get(id);
+    const pollRow = this.db.prepare('SELECT * FROM Polls WHERE id = ?').get(id) as PollRow | undefined;
     if (!pollRow) return null;
     
     const poll: Poll = {
-      id: pollRow.id as string,
-      author_id: pollRow.author_id as string,
-      created_at: pollRow.created_at as string,
-      question: pollRow.question as string
+      id: pollRow.id,
+      author_id: pollRow.author_id,
+      created_at: pollRow.created_at,
+      question: pollRow.question
     };
     
-    const answerRows = this.db.prepare('SELECT * FROM Answers WHERE poll_id = ?').all(id);
+    const answerRows = this.db.prepare('SELECT * FROM Answers WHERE poll_id = ?').all(id) as AnswerRow[];
     const answers: Answer[] = answerRows.map(row => ({
-      id: row.id as string,
-      poll_id: row.poll_id as string,
-      text: row.text as string
+      id: row.id,
+      poll_id: row.poll_id,
+      text: row.text
     }));
     
     return { poll, answers };
@@ -238,21 +266,21 @@ export class DatabaseUtils {
   getPolls(limit: number = 10, offset: number = 0): { poll: Poll; answers: Answer[] }[] {
     const pollRows = this.db.prepare(
       'SELECT * FROM Polls ORDER BY created_at DESC LIMIT ? OFFSET ?'
-    ).all(limit, offset);
+    ).all(limit, offset) as PollRow[];
     
     return pollRows.map(row => {
       const poll: Poll = {
-        id: row.id as string,
-        author_id: row.author_id as string,
-        created_at: row.created_at as string,
-        question: row.question as string
+        id: row.id,
+        author_id: row.author_id,
+        created_at: row.created_at,
+        question: row.question
       };
       
-      const answerRows = this.db.prepare('SELECT * FROM Answers WHERE poll_id = ?').all(poll.id);
+      const answerRows = this.db.prepare('SELECT * FROM Answers WHERE poll_id = ?').all(poll.id) as AnswerRow[];
       const answers: Answer[] = answerRows.map(aRow => ({
-        id: aRow.id as string,
-        poll_id: aRow.poll_id as string,
-        text: aRow.text as string
+        id: aRow.id,
+        poll_id: aRow.poll_id,
+        text: aRow.text
       }));
       
       return { poll, answers };
@@ -363,16 +391,16 @@ export class DatabaseUtils {
   getUserVote(userId: string, pollId: string): Vote | null {
     const voteRow = this.db.prepare(
       'SELECT * FROM Votes WHERE poll_id = ? AND user_id = ?'
-    ).get(pollId, userId);
+    ).get(pollId, userId) as VoteRow | undefined;
     
     if (!voteRow) return null;
     
     return {
-      id: voteRow.id as string,
-      poll_id: voteRow.poll_id as string,
-      answer_id: voteRow.answer_id as string,
-      user_id: voteRow.user_id as string,
-      created_at: voteRow.created_at as string
+      id: voteRow.id,
+      poll_id: voteRow.poll_id,
+      answer_id: voteRow.answer_id,
+      user_id: voteRow.user_id,
+      created_at: voteRow.created_at
     };
   }
 }
