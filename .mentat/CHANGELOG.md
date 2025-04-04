@@ -1,5 +1,42 @@
 # EveryPoll Changelog
 
+## Step 8: Basic PollCard Component (2025-04-04)
+
+- Created PollCard component with complete voting functionality:
+  - Implemented interface to display poll questions and answer options
+  - Added API integration for voting functionality
+  - Created dynamic column chart visualization for voting results
+  - Added user vote highlighting for selected answers
+  - Displayed vote counts and percentages for transparency
+- Developed comprehensive UI states:
+  - Pre-voting view with answer buttons
+  - Post-voting view with column chart results
+  - Loading states for data fetching
+  - Error handling for API failures
+- Designed responsive styling:
+  - Created clean, modern UI for poll interactions
+  - Implemented animated column charts for vote results
+  - Added visual highlighting for user's selected answer
+  - Designed with mobile-first approach
+- Added flexible component API:
+  - Support for direct poll data injection
+  - Support for poll ID with automatic data fetching
+  - Comprehensive TypeScript interfaces
+- Updated App component:
+  - Added integration with PollCard component
+  - Created updated UI with consistent styling
+  - Implemented automatic poll fetching from feed
+- Enhanced styling system:
+  - Added dedicated styling for the PollCard component
+  - Updated application layout and typography
+  - Improved visual hierarchy and readability
+- Created comprehensive test suite:
+  - Verified display of poll questions and answer buttons
+  - Tested API integration for vote submission
+  - Validated proper UI updates after voting
+  - Confirmed column chart displays with correct percentages
+  - Verified user's selected answer highlighting
+
 ## Step 7: Feed and Search Routes (2025-04-04)
 
 - Implemented paginated poll feed and search functionality:

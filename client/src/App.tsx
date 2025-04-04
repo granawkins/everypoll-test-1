@@ -1,26 +1,35 @@
 import { useState, useEffect } from 'react';
-import mentatLogo from '/mentat.png';
 import Background from './components/Background';
+import PollCard from './components/PollCard';
 
 function App() {
+  const [pollId, setPollId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchBackendMessage = async () => {
+    const fetchServerInfo = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        const response = await fetch('/api');
-
-        if (!response.ok) {
-          throw new Error(`HTTP error ${response.status}`);
+        // Fetch welcome message
+        const messageResponse = await fetch('/api');
+        if (!messageResponse.ok) {
+          throw new Error(`HTTP error ${messageResponse.status}`);
         }
+        const messageData = await messageResponse.json();
+        setMessage(messageData.message);
 
-        const data = await response.json();
-        setMessage(data.message);
+        // Check if there are any polls available to display
+        const pollsResponse = await fetch('/api/feed?limit=1');
+        if (pollsResponse.ok) {
+          const pollsData = await pollsResponse.json();
+          if (pollsData.polls && pollsData.polls.length > 0) {
+            setPollId(pollsData.polls[0].poll.id);
+          }
+        }
       } catch (err) {
         console.error('Error fetching data:', err);
         setError(
@@ -31,47 +40,41 @@ function App() {
       }
     };
 
-    fetchBackendMessage();
+    fetchServerInfo();
   }, []);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        height: '100vh',
-        width: '100vw',
-        backgroundColor: '#f0f0f0',
-        gap: '1rem',
-      }}
-    >
+    <>
       <Background />
-      <div>
-        <a href="https://mentat.ai" target="_blank">
-          <img src={mentatLogo} className="logo" alt="Mentat logo" />
-        </a>
-      </div>
-      <h1>Mentat Template JS</h1>
-      <ul>
-        <li>Frontend: React, Vite, Vitest</li>
-        <li>Backend: Node.js, Express, Jest</li>
-        <li>Utilities: Typescript, ESLint, Prettier</li>
-      </ul>
-      <p>
-        <b>Message from server:</b>{' '}
-        {loading
-          ? 'Loading message from server...'
-          : error
-            ? `Error: ${error}`
-            : message
-              ? message
-              : 'No message from server'}
-      </p>
+      <div className="app-container">
+        <header className="app-header">
+          <h1>EveryPoll</h1>
+          <p className="app-subtitle">Vote, compare, discover</p>
+        </header>
 
-      <p>Create a new GitHub issue at tag '@MentatBot' to get started.</p>
-    </div>
+        <main className="app-content">
+          {loading ? (
+            <div className="app-loading">Loading...</div>
+          ) : error ? (
+            <div className="app-error">Error: {error}</div>
+          ) : (
+            <>
+              <div className="app-welcome">
+                <p>{message || 'Welcome to EveryPoll!'}</p>
+              </div>
+
+              {pollId ? (
+                <PollCard pollId={pollId} />
+              ) : (
+                <div className="app-no-polls">
+                  <p>No polls available. Create your first poll to get started!</p>
+                </div>
+              )}
+            </>
+          )}
+        </main>
+      </div>
+    </>
   );
 }
 
