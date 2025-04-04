@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Background from './components/Background';
 import Feed from './components/Feed';
 import Header from './components/Header';
+import CreatePoll from './components/CreatePoll';
+import PollCard from './components/PollCard';
 
 function App() {
   const [message, setMessage] = useState<string | null>(null);
@@ -53,8 +56,31 @@ function App() {
     setSearchQuery(e.target.value);
   };
 
-  return (
+  const HomePage = () => (
     <>
+      {loading && !message ? (
+        <div className="app-loading">Loading...</div>
+      ) : error ? (
+        <div className="app-error">Error: {error}</div>
+      ) : (
+        <>
+          <div className="app-welcome">
+            <p>{message || 'Welcome to EveryPoll!'}</p>
+          </div>
+
+          <Feed searchQuery={debouncedSearchQuery} />
+        </>
+      )}
+    </>
+  );
+
+  const PollPage = () => {
+    const pollId = window.location.pathname.split('/').pop();
+    return <PollCard pollId={pollId} />;
+  };
+
+  return (
+    <BrowserRouter>
       <Background />
       <div className="app-container">
         <Header 
@@ -63,22 +89,16 @@ function App() {
         />
 
         <main className="app-content">
-          {loading && !message ? (
-            <div className="app-loading">Loading...</div>
-          ) : error ? (
-            <div className="app-error">Error: {error}</div>
-          ) : (
-            <>
-              <div className="app-welcome">
-                <p>{message || 'Welcome to EveryPoll!'}</p>
-              </div>
-
-              <Feed searchQuery={debouncedSearchQuery} />
-            </>
-          )}
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/create" element={<CreatePoll />} />
+            <Route path="/poll/:id" element={<PollPage />} />
+            {/* Redirect any other routes to the home page */}
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
         </main>
       </div>
-    </>
+    </BrowserRouter>
   );
 }
 
