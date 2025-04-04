@@ -1,24 +1,35 @@
 import request from 'supertest';
 import { app } from '../../app';
 import { reinitializeTestDatabase } from '../../database/init';
-import { dbUtils } from '../../database';
+import { DatabaseUtils } from '../../database/utils';
 import { createToken, AUTH_COOKIE_NAME } from '../../auth';
 import { User } from '../../database/utils';
+import Database from 'better-sqlite3';
 
 describe('Poll API Endpoints', () => {
+  let testDb: Database.Database;
+  let testDbUtils: DatabaseUtils;
   let testUser: User;
   let userToken: string;
 
   // Initialize a fresh database and create a test user before each test
   beforeEach(() => {
-    // Reset the database
-    reinitializeTestDatabase();
+    // Reset the database and get a new instance
+    testDb = reinitializeTestDatabase();
+    testDbUtils = new DatabaseUtils(testDb);
 
     // Create a test user with a unique email to avoid unique constraint violations
     const timestamp = Date.now();
     const uniqueEmail = `test-${timestamp}@polls-test.com`;
-    testUser = dbUtils.createUser(uniqueEmail, 'Poll Test User');
+    testUser = testDbUtils.createUser(uniqueEmail, 'Poll Test User');
     userToken = createToken(testUser);
+  });
+
+  // Clean up database after tests
+  afterEach(() => {
+    if (testDb) {
+      testDb.close();
+    }
   });
 
   describe('POST /api/poll', () => {
@@ -46,7 +57,7 @@ describe('Poll API Endpoints', () => {
       expect(answerTexts).toEqual(expect.arrayContaining(pollData.answers));
 
       // Verify poll was saved in database
-      const savedPoll = dbUtils.getPollById(response.body.poll.id);
+      const savedPoll = testDbUtils.getPollById(response.body.poll.id);
       expect(savedPoll).not.toBeNull();
       expect(savedPoll?.poll.question).toBe(pollData.question);
     });
@@ -134,7 +145,7 @@ describe('Poll API Endpoints', () => {
 
     beforeEach(async () => {
       // Create a test poll
-      const pollResult = dbUtils.createPoll(
+      const pollResult = testDbUtils.createPoll(
         testUser.id,
         'Test Question',
         ['Option A', 'Option B', 'Option C']
@@ -142,11 +153,11 @@ describe('Poll API Endpoints', () => {
       createdPollId = pollResult.poll.id;
 
       // Add some votes for the poll
-      const user2 = dbUtils.createUser('user2@example.com', 'User 2');
-      const user3 = dbUtils.createUser('user3@example.com', 'User 3');
+      const user2 = testDbUtils.createUser('user2@example.com', 'User 2');
+      const user3 = testDbUtils.createUser('user3@example.com', 'User 3');
 
-      dbUtils.createVote(user2.id, createdPollId, pollResult.answers[0].id);
-      dbUtils.createVote(user3.id, createdPollId, pollResult.answers[1].id);
+      testDbUtils.createVote(user2.id, createdPollId, pollResult.answers[0].id);
+      testDbUtils.createVote(user3.id, createdPollId, pollResult.answers[1].id);
     });
 
     it('should return poll with answers and author info', async () => {
@@ -178,13 +189,13 @@ describe('Poll API Endpoints', () => {
 
     it('should include user vote info when authenticated user has voted', async () => {
       // Get the poll answers
-      const pollResult = dbUtils.getPollById(createdPollId);
+      const pollResult = testDbUtils.getPollById(createdPollId);
       if (!pollResult) {
         throw new Error('Test poll not found');
       }
       
       // Cast a vote as the test user
-      dbUtils.createVote(testUser.id, createdPollId, pollResult.answers[2].id);
+      testDbUtils.createVote(testUser.id, createdPollId, pollResult.answers[2].id);
       
       const response = await request(app)
         .get(`/api/poll/${createdPollId}`)
