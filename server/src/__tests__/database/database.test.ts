@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { DB_CONFIG } from '../../database/config';
 import { reinitializeTestDatabase } from '../../database/init';
-import { DatabaseUtils, User, Poll, Answer, Vote } from '../../database/utils';
+import { DatabaseUtils, User, Poll, Answer } from '../../database/utils';
 import Database from 'better-sqlite3';
 import { applyMigrations } from '../../database/migrations';
 
