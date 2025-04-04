@@ -7,7 +7,6 @@ import { reinitializeTestDatabase } from '../../database/init';
 
 describe('Authentication System', () => {
   let testUser: User;
-  let anonymousUser: User;
   let userToken: string;
 
   // Initialize a fresh database before all tests
@@ -22,9 +21,6 @@ describe('Authentication System', () => {
     // to avoid conflicts with other test files
     testUser = dbUtils.createUser('test@auth-test.com', 'Auth Test User');
     userToken = createToken(testUser);
-
-    // Create anonymous user for comparison
-    anonymousUser = dbUtils.createUser();
   });
 
   describe('JWT Utilities', () => {

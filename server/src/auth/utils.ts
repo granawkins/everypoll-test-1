@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
 import { dbUtils } from '../database';
 import { User } from '../database/utils';
 

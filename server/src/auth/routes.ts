@@ -1,6 +1,5 @@
 import express, { Request, Response } from 'express';
 import { createToken, getCurrentUser, AUTH_COOKIE_NAME, COOKIE_OPTIONS } from './utils';
-import { authenticate } from './middleware';
 
 const router = express.Router();
 
