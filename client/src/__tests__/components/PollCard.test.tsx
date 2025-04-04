@@ -1,12 +1,60 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, MockInstance } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import PollCard from '../../components/PollCard';
 
+// Define types for the mock data
+interface Poll {
+  id: string;
+  question: string;
+  created_at: string;
+}
+
+interface Answer {
+  id: string;
+  text: string;
+}
+
+interface Author {
+  id: string;
+  name: string | null;
+}
+
+interface PollData {
+  poll: Poll;
+  answers: Answer[];
+  author: Author;
+  voteCounts: Record<string, number>;
+  userVote: { answerId: string } | null;
+}
+
+interface VoteResponse {
+  success: boolean;
+  message: string;
+  vote: {
+    id: string;
+    answerId: string;
+    pollId: string;
+    createdAt: string;
+  };
+  voteCounts: Record<string, number>;
+}
+
+interface ErrorResponse {
+  error: string;
+  message: string;
+}
+
+// Type for the fetch response
+interface MockResponse {
+  ok: boolean;
+  json: () => Promise<PollData | VoteResponse | ErrorResponse>;
+}
+
 // Mock the fetch function
-globalThis.fetch = vi.fn();
+globalThis.fetch = vi.fn() as unknown as typeof fetch;
 
 // Mock data for tests
-const mockPollData = {
+const mockPollData: PollData = {
   poll: {
     id: 'poll-123',
     question: 'What is your favorite color?',
@@ -26,7 +74,10 @@ const mockPollData = {
 };
 
 // Mock response for fetch
-const mockFetchResponse = (data: any, ok = true) => {
+const mockFetchResponse = (
+  data: PollData | VoteResponse | ErrorResponse, 
+  ok = true
+): MockResponse => {
   return {
     ok,
     json: () => Promise.resolve(data),
@@ -58,7 +109,7 @@ describe('PollCard Component', () => {
 
   it('should call API and update UI when voting', async () => {
     // Setup mock response for voting API
-    const mockVoteResponse = {
+    const mockVoteResponse: VoteResponse = {
       success: true,
       message: 'Vote recorded successfully',
       vote: {
@@ -72,7 +123,7 @@ describe('PollCard Component', () => {
       },
     };
     
-    (globalThis.fetch as any).mockResolvedValueOnce(
+    (globalThis.fetch as MockInstance).mockResolvedValueOnce(
       mockFetchResponse(mockVoteResponse)
     );
     
@@ -106,7 +157,7 @@ describe('PollCard Component', () => {
 
   it('should display column chart after voting', async () => {
     // Mock data with existing vote
-    const pollDataWithVote = {
+    const pollDataWithVote: PollData = {
       ...mockPollData,
       voteCounts: {
         'answer-1': 2,
@@ -133,7 +184,7 @@ describe('PollCard Component', () => {
 
   it('should highlight user selected answer', () => {
     // Mock data with user vote
-    const pollDataWithUserVote = {
+    const pollDataWithUserVote: PollData = {
       ...mockPollData,
       voteCounts: {
         'answer-1': 1,
@@ -154,7 +205,7 @@ describe('PollCard Component', () => {
 
   it('should fetch poll data if provided with pollId', async () => {
     // Mock the fetch response for poll data
-    (globalThis.fetch as any).mockResolvedValueOnce(
+    (globalThis.fetch as MockInstance).mockResolvedValueOnce(
       mockFetchResponse(mockPollData)
     );
     
@@ -176,8 +227,13 @@ describe('PollCard Component', () => {
 
   it('should handle errors when fetching poll data', async () => {
     // Mock an error response
-    (globalThis.fetch as any).mockResolvedValueOnce(
-      mockFetchResponse({ error: 'Poll not found' }, false)
+    const errorResponse: ErrorResponse = { 
+      error: 'Poll not found',
+      message: 'No poll found with that ID'
+    };
+    
+    (globalThis.fetch as MockInstance).mockResolvedValueOnce(
+      mockFetchResponse(errorResponse, false)
     );
     
     render(<PollCard pollId="invalid-poll" />);
@@ -193,8 +249,13 @@ describe('PollCard Component', () => {
 
   it('should handle errors when voting', async () => {
     // Mock an error response for voting
-    (globalThis.fetch as any).mockResolvedValueOnce(
-      mockFetchResponse({ error: 'Authentication required', message: 'You must be logged in to vote' }, false)
+    const authErrorResponse: ErrorResponse = {
+      error: 'Authentication required',
+      message: 'You must be logged in to vote'
+    };
+    
+    (globalThis.fetch as MockInstance).mockResolvedValueOnce(
+      mockFetchResponse(authErrorResponse, false)
     );
     
     render(<PollCard pollData={mockPollData} />);

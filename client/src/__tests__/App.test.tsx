@@ -1,16 +1,50 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, MockInstance } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import App from '../App';
 
+// Define types for API responses
+interface ApiResponse {
+  message: string;
+}
+
+interface Author {
+  id: string;
+  name: string | null;
+}
+
+interface Poll {
+  id: string;
+  question: string;
+  created_at: string;
+}
+
+interface Answer {
+  id: string;
+  text: string;
+}
+
+interface PollData {
+  poll: Poll;
+  answers: Answer[];
+  author: Author;
+  voteCounts: Record<string, number>;
+  userVote?: { answerId: string } | null;
+}
+
+interface FeedResponse {
+  polls: PollData[];
+  totalCount: number;
+}
+
 // Mock the fetch API
-globalThis.fetch = vi.fn();
+globalThis.fetch = vi.fn() as unknown as typeof fetch;
 
 // Create mock responses
-const mockApiResponse = {
+const mockApiResponse: ApiResponse = {
   message: 'Welcome to the EveryPoll API!'
 };
 
-const mockPollsResponse = {
+const mockPollsResponse: FeedResponse = {
   polls: [
     {
       poll: {
@@ -32,8 +66,14 @@ const mockPollsResponse = {
   totalCount: 1
 };
 
+// Type for mock fetch response
+interface MockResponse {
+  ok: boolean;
+  json: () => Promise<unknown>;
+}
+
 // Helper to mock fetch responses
-const mockFetchImplementation = (url: string) => {
+const mockFetchImplementation = (url: string): Promise<MockResponse> => {
   if (url === '/api') {
     return Promise.resolve({
       ok: true,
@@ -67,7 +107,7 @@ const mockFetchImplementation = (url: string) => {
 describe('App Component', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    (globalThis.fetch as any).mockImplementation(mockFetchImplementation);
+    (globalThis.fetch as MockInstance).mockImplementation(mockFetchImplementation);
   });
 
   it('renders App component correctly', () => {
@@ -100,7 +140,7 @@ describe('App Component', () => {
 
   it('handles API error', async () => {
     // Mock a failed API call
-    (globalThis.fetch as any).mockRejectedValue(new Error('API Error'));
+    (globalThis.fetch as MockInstance).mockRejectedValue(new Error('API Error'));
 
     render(<App />);
 
@@ -112,7 +152,7 @@ describe('App Component', () => {
 
   it('shows no polls message when feed is empty', async () => {
     // Mock an empty polls response
-    (globalThis.fetch as any).mockImplementation((url: string) => {
+    (globalThis.fetch as MockInstance).mockImplementation((url: string): Promise<MockResponse> => {
       if (url === '/api') {
         return Promise.resolve({
           ok: true,
