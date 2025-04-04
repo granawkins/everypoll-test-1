@@ -76,7 +76,10 @@ export function initializeDatabase(): Database.Database {
 
   // Connect to the database (creates it if it doesn't exist)
   const dbPath = DB_CONFIG.getDatabasePath();
-  const db = new Database(dbPath);
+  const db = new Database(dbPath, { 
+    readonly: false, // Ensure we have write access
+    fileMustExist: false // Create if it doesn't exist
+  });
 
   // Enable foreign keys
   db.pragma('foreign_keys = ON');
@@ -91,9 +94,8 @@ export function initializeDatabase(): Database.Database {
 }
 
 /**
- * For testing purposes - reinitializes the test database
- * by deleting and recreating it
- * @returns A connected test database instance
+ * For testing purposes - creates an in-memory test database
+ * @returns A connected in-memory test database instance
  */
 export function reinitializeTestDatabase(): Database.Database {
   // Ensure we're in test mode
@@ -101,15 +103,29 @@ export function reinitializeTestDatabase(): Database.Database {
     throw new Error('reinitializeTestDatabase() should only be called in test mode');
   }
 
-  // Ensure the data directory exists
-  ensureDataDirectory();
-  
-  // Delete the test database if it exists
-  const dbPath = DB_CONFIG.getDatabasePath();
-  if (fs.existsSync(dbPath)) {
-    fs.unlinkSync(dbPath);
+  try {
+    // Create an in-memory database for testing
+    // This avoids file permission issues entirely
+    const db = new Database(':memory:');
+    
+    // Enable foreign keys
+    db.pragma('foreign_keys = ON');
+    
+    // Create initial schema
+    createInitialSchema(db);
+    
+    // Create migrations table
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS migrations (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    
+    return db;
+  } catch (error) {
+    console.error('Error initializing in-memory test database:', error);
+    throw error;
   }
-
-  // Initialize a fresh database
-  return initializeDatabase();
 }

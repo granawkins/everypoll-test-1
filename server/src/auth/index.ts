@@ -9,6 +9,13 @@ import {
   AUTH_COOKIE_NAME,
   COOKIE_OPTIONS
 } from './utils';
+import {
+  getGoogleAuthUrl,
+  getTokensFromCode,
+  getUserInfoFromToken,
+  createOrUpdateUserFromGoogle,
+  GoogleUserInfo
+} from './google';
 
 export {
   authRoutes,
@@ -20,5 +27,10 @@ export {
   createAnonymousUser,
   getCurrentUser,
   AUTH_COOKIE_NAME,
-  COOKIE_OPTIONS
+  COOKIE_OPTIONS,
+  getGoogleAuthUrl,
+  getTokensFromCode,
+  getUserInfoFromToken,
+  createOrUpdateUserFromGoogle,
+  GoogleUserInfo
 };
