@@ -161,9 +161,10 @@ describe('Google OAuth Integration', () => {
   describe('User Management', () => {
     it('should create a new user from Google profile', async () => {
       // Setup
+      const timestamp = Date.now();
       const googleInfo = {
         id: 'google-new-user',
-        email: 'new-user@example.com',
+        email: `new-user-${timestamp}@example.com`,
         name: 'New User'
       };
       
@@ -186,7 +187,8 @@ describe('Google OAuth Integration', () => {
     
     it('should update an existing user from Google profile', async () => {
       // Create a user first
-      const existingUser = dbUtils.createUser('existing@example.com', 'Old Name');
+      const timestamp = Date.now();
+      const existingUser = dbUtils.createUser(`existing-${timestamp}@example.com`, 'Old Name');
       
       // Setup Google profile with updated name
       const googleInfo = {
