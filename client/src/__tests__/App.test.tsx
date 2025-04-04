@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, MockInstance } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import App from '../App';
 
@@ -37,7 +37,8 @@ interface FeedResponse {
 }
 
 // Mock the fetch API
-globalThis.fetch = vi.fn() as unknown as typeof fetch;
+const mockFetch = vi.fn();
+globalThis.fetch = mockFetch as unknown as typeof fetch;
 
 // Create mock responses
 const mockApiResponse: ApiResponse = {
@@ -107,7 +108,7 @@ const mockFetchImplementation = (url: string): Promise<MockResponse> => {
 describe('App Component', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    (globalThis.fetch as MockInstance).mockImplementation(mockFetchImplementation);
+    mockFetch.mockImplementation(mockFetchImplementation);
   });
 
   it('renders App component correctly', () => {
@@ -140,7 +141,7 @@ describe('App Component', () => {
 
   it('handles API error', async () => {
     // Mock a failed API call
-    (globalThis.fetch as MockInstance).mockRejectedValue(new Error('API Error'));
+    mockFetch.mockRejectedValue(new Error('API Error'));
 
     render(<App />);
 
@@ -152,7 +153,7 @@ describe('App Component', () => {
 
   it('shows no polls message when feed is empty', async () => {
     // Mock an empty polls response
-    (globalThis.fetch as MockInstance).mockImplementation((url: string): Promise<MockResponse> => {
+    mockFetch.mockImplementation((url: string): Promise<MockResponse> => {
       if (url === '/api') {
         return Promise.resolve({
           ok: true,

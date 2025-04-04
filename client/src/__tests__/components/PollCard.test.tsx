@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, MockInstance } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import PollCard from '../../components/PollCard';
 
@@ -51,7 +51,8 @@ interface MockResponse {
 }
 
 // Mock the fetch function
-globalThis.fetch = vi.fn() as unknown as typeof fetch;
+const mockFetch = vi.fn();
+globalThis.fetch = mockFetch as unknown as typeof fetch;
 
 // Mock data for tests
 const mockPollData: PollData = {
@@ -123,7 +124,7 @@ describe('PollCard Component', () => {
       },
     };
     
-    (globalThis.fetch as MockInstance).mockResolvedValueOnce(
+    mockFetch.mockResolvedValueOnce(
       mockFetchResponse(mockVoteResponse)
     );
     
@@ -205,7 +206,7 @@ describe('PollCard Component', () => {
 
   it('should fetch poll data if provided with pollId', async () => {
     // Mock the fetch response for poll data
-    (globalThis.fetch as MockInstance).mockResolvedValueOnce(
+    mockFetch.mockResolvedValueOnce(
       mockFetchResponse(mockPollData)
     );
     
@@ -232,7 +233,7 @@ describe('PollCard Component', () => {
       message: 'No poll found with that ID'
     };
     
-    (globalThis.fetch as MockInstance).mockResolvedValueOnce(
+    mockFetch.mockResolvedValueOnce(
       mockFetchResponse(errorResponse, false)
     );
     
@@ -254,7 +255,7 @@ describe('PollCard Component', () => {
       message: 'You must be logged in to vote'
     };
     
-    (globalThis.fetch as MockInstance).mockResolvedValueOnce(
+    mockFetch.mockResolvedValueOnce(
       mockFetchResponse(authErrorResponse, false)
     );
     
