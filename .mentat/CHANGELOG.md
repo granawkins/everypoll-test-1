@@ -1,5 +1,35 @@
 # EveryPoll Changelog
 
+## Step 12: Poll Creation Screen (2025-04-04)
+
+- Created poll creation form with dynamic answer fields:
+  - Implemented CreatePoll component with interactive form
+  - Added ability to add/remove answer options dynamically
+  - Created validation to enforce 2-10 answer options requirement
+  - Integrated with poll creation API endpoint
+  - Added success/error feedback with helpful messages
+  - Implemented automatic redirection to new poll after creation
+- Integrated React Router DOM for application routing:
+  - Set up routes for homepage, poll creation, and poll view
+  - Updated App component to handle client-side routing
+  - Created route components and updated navigation flow
+  - Refactored navigation to use Link components instead of direct URL changes
+- Enhanced Header component for better integration:
+  - Updated "Create Poll" button to use React Router
+  - Added conditional rendering for search bar based on current route
+  - Improved user experience with better navigation handling
+- Added comprehensive styling for poll creation:
+  - Created clean, user-friendly form layout
+  - Added visual feedback for validation states
+  - Implemented responsive design for all device sizes
+  - Enhanced button interactions and hover states
+- Created extensive test suite:
+  - Validated form interaction with adding/removing answer options
+  - Verified form validation prevents submission with invalid data
+  - Confirmed API integration for successful poll creation
+  - Tested error handling for API failures
+  - Covered user redirection after successful submission
+
 ## Step 11: Header Component (2025-04-04)
 
 - Created sticky header component with logo, search, and user controls:

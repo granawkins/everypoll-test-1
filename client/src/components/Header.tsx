@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 interface User {
   id: string;
@@ -16,6 +17,11 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Hide search bar on certain pages
+  const showSearch = location.pathname === '/';
 
   // Fetch user data when component mounts
   useEffect(() => {
@@ -55,7 +61,8 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange }) => {
       }
       // Reset user state to anonymous
       setUser(null);
-      window.location.reload(); // Reload to reset all states
+      // Navigate to home page
+      navigate('/');
     } catch (err) {
       console.error('Error logging out:', err);
       setError(err instanceof Error ? err.message : 'Failed to logout');
@@ -65,20 +72,24 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange }) => {
   return (
     <header className="app-header">
       <div className="app-header-title">
-        <h1>EveryPoll</h1>
-        <p className="app-subtitle">Vote, compare, discover</p>
+        <Link to="/" className="app-logo-link">
+          <h1>EveryPoll</h1>
+          <p className="app-subtitle">Vote, compare, discover</p>
+        </Link>
       </div>
       
-      <div className="app-header-search">
-        <input
-          type="text"
-          placeholder="Search polls..."
-          value={searchQuery}
-          onChange={onSearchChange}
-          className="app-search-input"
-          aria-label="Search polls"
-        />
-      </div>
+      {showSearch && (
+        <div className="app-header-search">
+          <input
+            type="text"
+            placeholder="Search polls..."
+            value={searchQuery}
+            onChange={onSearchChange}
+            className="app-search-input"
+            aria-label="Search polls"
+          />
+        </div>
+      )}
       
       <div className="app-header-actions">
         {loading ? (
@@ -89,13 +100,13 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, onSearchChange }) => {
           <>
             {user?.isAuthenticated ? (
               <>
-                <button 
+                <Link
+                  to="/create"
                   className="create-poll-button"
-                  onClick={() => window.location.href = '/create'}
                   aria-label="Create new poll"
                 >
                   Create Poll
-                </button>
+                </Link>
                 <div className="user-avatar-container" onClick={handleLogout} title={user.name || 'User Profile'}>
                   {user.name ? (
                     <div className="user-avatar">
