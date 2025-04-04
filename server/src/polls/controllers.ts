@@ -129,3 +129,104 @@ export const getPollById = async (
     next(error);
   }
 };
+
+/**
+ * Records a vote for a poll
+ */
+export const voteOnPoll = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    // User must be authenticated to vote
+    if (!req.isAuthenticated || !req.user) {
+      res.status(401).json({
+        error: 'Authentication required',
+        message: 'You must be logged in to vote'
+      });
+      return;
+    }
+
+    const { id: pollId } = req.params;
+    const { answerId } = req.body;
+
+    if (!pollId) {
+      res.status(400).json({
+        error: 'Missing poll ID',
+        message: 'Poll ID is required'
+      });
+      return;
+    }
+
+    if (!answerId) {
+      res.status(400).json({
+        error: 'Missing answer ID',
+        message: 'Answer ID is required'
+      });
+      return;
+    }
+
+    // Check if poll exists
+    const pollResult = dbUtils.getPollById(pollId);
+    if (!pollResult) {
+      res.status(404).json({
+        error: 'Poll not found',
+        message: `No poll found with ID: ${pollId}`
+      });
+      return;
+    }
+
+    // Check if answer belongs to this poll
+    const answerBelongsToPoll = pollResult.answers.some(answer => answer.id === answerId);
+    if (!answerBelongsToPoll) {
+      res.status(400).json({
+        error: 'Invalid answer',
+        message: 'The provided answer ID does not belong to this poll'
+      });
+      return;
+    }
+
+    // Check if user has already voted on this poll
+    const existingVote = dbUtils.getUserVote(req.user.id, pollId);
+    if (existingVote) {
+      res.status(400).json({
+        error: 'Already voted',
+        message: 'You have already voted on this poll',
+        vote: {
+          answerId: existingVote.answer_id
+        }
+      });
+      return;
+    }
+
+    // Record the vote
+    const vote = dbUtils.createVote(req.user.id, pollId, answerId);
+    
+    if (!vote) {
+      res.status(500).json({
+        error: 'Vote failed',
+        message: 'Failed to record your vote. Please try again.'
+      });
+      return;
+    }
+
+    // Get updated vote counts
+    const voteCounts = dbUtils.getVoteCounts(pollId);
+
+    // Return success with vote details and updated counts
+    res.status(201).json({
+      success: true,
+      message: 'Vote recorded successfully',
+      vote: {
+        id: vote.id,
+        answerId: vote.answer_id,
+        pollId: vote.poll_id,
+        createdAt: vote.created_at
+      },
+      voteCounts
+    });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -1,5 +1,25 @@
 # EveryPoll Changelog
 
+## Step 5: Voting System (2025-04-04)
+
+- Added voting functionality to polls:
+  - Implemented POST /api/poll/:id/vote endpoint for recording votes
+  - Added proper validation and error handling for vote submissions
+  - Ensured votes can only be cast by authenticated users
+  - Prevented users from voting twice on the same poll
+  - Returned updated vote counts after successful votes
+- Enhanced error handling for voting:
+  - Validated poll existence before accepting votes
+  - Verified that answer IDs belong to the correct poll
+  - Provided clear error messages for all validation failures
+  - Returned appropriate HTTP status codes for different error cases
+- Implemented comprehensive testing for voting system:
+  - Tested successful vote recording and database updates
+  - Verified authentication requirements for voting
+  - Confirmed prevention of duplicate votes
+  - Validated error responses for malformed requests
+  - Tested vote count accuracy after multiple votes
+
 ## Step 4: Poll Creation and Viewing (2025-04-04)
 
 - Created poll controllers following layered architecture pattern:

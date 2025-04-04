@@ -41,7 +41,9 @@ router.get('/me', async (req: Request, res: Response) => {
       isAuthenticated: user.email !== null, // True if not anonymous
     });
   } catch (error) {
-    console.error('Error in /auth/me:', error);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Error in /auth/me:', error);
+    }
     res.status(500).json({ 
       error: 'Server error',
       message: 'An error occurred while processing your request' 
@@ -65,7 +67,9 @@ router.get('/login', (req: Request, res: Response) => {
     // Redirect to Google's login page
     res.redirect(authUrl);
   } catch (error) {
-    console.error('Error in /auth/login:', error);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Error in /auth/login:', error);
+    }
     res.status(500).json({ 
       error: 'Server error',
       message: 'An error occurred while processing your request' 
@@ -85,13 +89,17 @@ router.get('/callback', async (req: Request, res: Response) => {
     
     // Handle error from Google
     if (error) {
-      console.error('Error from Google OAuth:', error);
+      if (process.env.NODE_ENV !== 'test') {
+        console.error('Error from Google OAuth:', error);
+      }
       return res.redirect('/?auth=error');
     }
     
     // Make sure we have an authorization code
     if (!code || typeof code !== 'string') {
-      console.error('Missing authorization code in callback');
+      if (process.env.NODE_ENV !== 'test') {
+        console.error('Missing authorization code in callback');
+      }
       return res.redirect('/?auth=error');
     }
     
@@ -99,7 +107,9 @@ router.get('/callback', async (req: Request, res: Response) => {
     const { tokens, error: tokenError } = await getTokensFromCode(code);
     
     if (tokenError || !tokens?.access_token) {
-      console.error('Error getting tokens:', tokenError);
+      if (process.env.NODE_ENV !== 'test') {
+        console.error('Error getting tokens:', tokenError);
+      }
       return res.redirect('/?auth=error');
     }
     
@@ -107,7 +117,9 @@ router.get('/callback', async (req: Request, res: Response) => {
     const googleUserInfo = await getUserInfoFromToken(tokens.access_token);
     
     if (!googleUserInfo) {
-      console.error('Error getting user info from Google');
+      if (process.env.NODE_ENV !== 'test') {
+        console.error('Error getting user info from Google');
+      }
       return res.redirect('/?auth=error');
     }
     
@@ -123,7 +135,9 @@ router.get('/callback', async (req: Request, res: Response) => {
     // Redirect to the home page
     res.redirect('/?auth=success');
   } catch (error) {
-    console.error('Error in /auth/callback:', error);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Error in /auth/callback:', error);
+    }
     res.redirect('/?auth=error');
   }
 });
@@ -145,7 +159,9 @@ router.post('/logout', (req: Request, res: Response) => {
       message: 'Logged out successfully' 
     });
   } catch (error) {
-    console.error('Error in /auth/logout:', error);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Error in /auth/logout:', error);
+    }
     res.status(500).json({ 
       error: 'Server error',
       message: 'An error occurred while processing your request' 
