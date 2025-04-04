@@ -84,7 +84,7 @@ app.get('/api/protected', (req: Request, res: Response) => {
 });
 
 // Serve React app - must be after all API routes
-app.get('*', (req: Request, res: Response) => {
+app.get('*', (req: Request, res: Response): void => {
   res.sendFile(path.join(CLIENT_DIST_PATH, 'index.html'));
 });
 

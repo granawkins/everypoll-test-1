@@ -14,7 +14,8 @@ import {
   getTokensFromCode,
   getUserInfoFromToken,
   createOrUpdateUserFromGoogle,
-  GoogleUserInfo
+  type GoogleUserInfo,
+  type GoogleTokens
 } from './google';
 
 export {
@@ -31,6 +32,8 @@ export {
   getGoogleAuthUrl,
   getTokensFromCode,
   getUserInfoFromToken,
-  createOrUpdateUserFromGoogle,
-  GoogleUserInfo
+  createOrUpdateUserFromGoogle
 };
+
+// Re-export types with correct syntax for isolatedModules
+export type { GoogleUserInfo, GoogleTokens };
