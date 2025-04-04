@@ -3,7 +3,7 @@ import { app } from '../../app';
 import { reinitializeTestDatabase } from '../../database/init';
 import { dbUtils } from '../../database';
 import { createToken, AUTH_COOKIE_NAME } from '../../auth';
-import { User, Poll, Answer } from '../../database/utils';
+import { User } from '../../database/utils';
 
 // Type for poll objects returned in API responses
 interface PollWithDetails {
