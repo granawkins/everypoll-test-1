@@ -1,5 +1,5 @@
 import express from 'express';
-import { createPoll, getPollById } from './controllers';
+import { createPoll, getPollById, voteOnPoll } from './controllers';
 import { authenticate, requireAuth } from '../auth';
 
 const router = express.Router();
@@ -10,5 +10,8 @@ router.get('/:id', getPollById);
 
 // POST /api/poll - Create a new poll (protected route)
 router.post('/', authenticate, requireAuth, createPoll);
+
+// POST /api/poll/:id/vote - Vote on a poll (protected route)
+router.post('/:id/vote', authenticate, requireAuth, voteOnPoll);
 
 export default router;
