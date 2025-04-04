@@ -556,4 +556,81 @@ export class DatabaseUtils {
       created_at: voteRow.created_at
     };
   }
+
+  /**
+   * Gets polls that a user has voted on
+   * @param userId ID of the user whose votes to filter by
+   * @param options Object with pagination, sorting, and filtering options
+   * @returns Object containing array of polls with answers and total count
+   */
+  getPollsByVoterId(
+    userId: string,
+    options: {
+      limit?: number;
+      offset?: number;
+      sortBy?: 'newest' | 'oldest';
+      query?: string;
+    } = {}
+  ): { polls: { poll: Poll; answers: Answer[] }[]; totalCount: number } {
+    // Set default values
+    const { 
+      limit = 10, 
+      offset = 0, 
+      sortBy = 'newest', 
+      query = null
+    } = options;
+    
+    // Build query to get poll IDs the user has voted on
+    let sql = `
+      SELECT DISTINCT p.*
+      FROM Polls p
+      JOIN Votes v ON p.id = v.poll_id
+      WHERE v.user_id = ?
+    `;
+    
+    const params = [userId];
+    
+    // Add search condition if query provided
+    if (query) {
+      sql += ` AND p.question LIKE ?`;
+      params.push(`%${query}%`);
+    }
+    
+    // Add sorting
+    const order = sortBy === 'oldest' ? 'ASC' : 'DESC';
+    sql += ` ORDER BY p.created_at ${order}`;
+    
+    // Get total count for pagination
+    const countSql = sql.replace('SELECT DISTINCT p.*', 'SELECT COUNT(DISTINCT p.id) as count');
+    const countResult = this.db.prepare(countSql).get(...params) as { count: number } | undefined;
+    const totalCount = countResult ? countResult.count : 0;
+    
+    // Add pagination
+    sql += ` LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+    
+    // Get poll rows
+    const pollRows = this.db.prepare(sql).all(...params) as PollRow[];
+    
+    // Map to poll objects with answers
+    const polls = pollRows.map(row => {
+      const poll: Poll = {
+        id: row.id,
+        author_id: row.author_id,
+        created_at: row.created_at,
+        question: row.question
+      };
+      
+      const answerRows = this.db.prepare('SELECT * FROM Answers WHERE poll_id = ?').all(poll.id) as AnswerRow[];
+      const answers: Answer[] = answerRows.map(aRow => ({
+        id: aRow.id,
+        poll_id: aRow.poll_id,
+        text: aRow.text
+      }));
+      
+      return { poll, answers };
+    });
+    
+    return { polls, totalCount };
+  }
 }

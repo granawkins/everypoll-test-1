@@ -1,5 +1,36 @@
 # EveryPoll Changelog
 
+## Step 14: User Profile (Owner View) (2025-04-04)
+
+- Enhanced UserProfile component with owner-specific functionality:
+  - Added detection of when a user is viewing their own profile
+  - Implemented tabbed interface for "Created" and "Voted" polls
+  - Added logout functionality directly in profile view
+  - Displayed user's email address for owner view
+  - Created intuitive tab navigation with visual indicators
+- Implemented backend support for viewing user's voted polls:
+  - Added new database method to get polls by voter ID
+  - Enhanced feed controller to support filtering polls by vote history
+  - Implemented security to ensure only the owner can see their voted polls
+  - Optimized database queries for performance
+- Created responsive UI enhancements:
+  - Added styled tabs with active state indicators
+  - Implemented logout button with visual feedback
+  - Ensured mobile responsiveness for all new features
+  - Added appropriate loading states when switching tabs
+- Enhanced Feed component to support vote history:
+  - Added voterId parameter for filtering polls
+  - Updated empty state messages for different contexts
+  - Ensured pagination works correctly for voted polls
+  - Maintained consistent loading and error states
+- Implemented comprehensive test suite:
+  - Verified different views for owner versus non-owner profiles
+  - Tested tab functionality for switching between created and voted polls
+  - Validated logout functionality and redirect behavior
+  - Confirmed proper display of user email for owner
+  - Tested error handling for unauthorized access to voted polls
+  - Verified empty states for both created and voted poll tabs
+
 ## Step 13: User Profile (Non-Owner View) (2025-04-04)
 
 - Implemented user profile page to display public user information:
