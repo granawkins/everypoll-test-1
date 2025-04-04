@@ -1,5 +1,30 @@
 # EveryPoll Changelog
 
+## Step 2: Basic JWT Authentication (2025-04-04)
+
+- Added minimal dependencies:
+  - jsonwebtoken for JWT token generation and validation
+  - cookie-parser for cookie management
+- Implemented JWT utilities:
+  - Token generation and validation functions
+  - Secure HTTP-only cookie settings
+  - Anonymous user creation
+- Created authentication middleware:
+  - `authenticate`: Attaches user to request (anonymous if no valid token)
+  - `requireAuth`: Protects routes from unauthenticated users
+- Added authentication routes:
+  - GET /api/auth/me: Returns user from token or creates anonymous user
+  - POST /api/auth/logout: Clears authentication cookie
+- Integrated authentication with main application:
+  - Added cookie parsing middleware
+  - Attached user to all requests
+  - Added test protected route
+- Created comprehensive tests:
+  - JWT token generation and validation
+  - Authentication routes behavior
+  - Middleware functionality
+  - Protected route access control
+
 ## Step 1: Database Setup (2025-04-04)
 
 - Added better-sqlite3 and uuid as dependencies
