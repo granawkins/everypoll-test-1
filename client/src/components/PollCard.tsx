@@ -94,6 +94,7 @@ const PollCard: React.FC<PollCardProps> = ({ pollId, pollData: initialPollData }
       // If there are cross-references, update the selected one
       if (data.crossReferences && data.crossReferences.length > 0) {
         setSelectedCrossReference(data.crossReferences[0]);
+        setActiveCrossReferenceAnswerId(null); // Reset active answer when changing cross-reference
       }
     } catch (err) {
       console.error('Error fetching poll:', err);
@@ -108,6 +109,13 @@ const PollCard: React.FC<PollCardProps> = ({ pollId, pollData: initialPollData }
     if (!pollId || pollData) return;
     fetchPollData(pollId);
   }, [pollId, pollData, fetchPollData]);
+
+  // Initialize selectedCrossReference from initial props
+  useEffect(() => {
+    if (initialPollData?.crossReferences && initialPollData.crossReferences.length > 0) {
+      setSelectedCrossReference(initialPollData.crossReferences[0]);
+    }
+  }, [initialPollData]);
 
   // Handle voting
   const handleVote = async (answerId: string) => {

@@ -445,13 +445,15 @@ describe('PollCard Component', () => {
   });
 
   it('should display sub-charts for cross-referenced results', async () => {
-    render(<PollCard pollData={mockPollWithCrossRef} />);
+    const { container } = render(<PollCard pollData={mockPollWithCrossRef} />);
     
-    // Cross-reference sub-charts heading should be visible
-    expect(screen.getByText('Results filtered by "Pizza" voters')).toBeInTheDocument();
+    // Wait for the cross-reference sub-charts heading to be visible
+    await waitFor(() => {
+      expect(screen.getByText('Results filtered by "Pizza" voters')).toBeInTheDocument();
+    });
     
     // Sub-charts should be present
-    const subChartBars = document.querySelectorAll('.cross-reference-sub-chart-bar');
+    const subChartBars = container.querySelectorAll('.cross-reference-sub-chart-bar');
     expect(subChartBars.length).toBe(3); // One for each answer in the original poll
     
     // Check if percentages in the sub-charts are correct
@@ -460,23 +462,34 @@ describe('PollCard Component', () => {
   });
 
   it('should update main chart when clicking on a sub-chart', async () => {
+    // Create the component and wait for it to render with the cross-reference data
     const { container } = render(<PollCard pollData={mockPollWithCrossRef} />);
     
-    // First verify the cross-reference sub-charts section is visible
-    expect(screen.getByText('Results filtered by "Pizza" voters')).toBeInTheDocument();
+    // Wait for the sub-charts section to be visible
+    await waitFor(() => {
+      expect(screen.getByText('Results filtered by "Pizza" voters')).toBeInTheDocument();
+    });
     
-    // Get all sub-charts from container
+    // Now get all sub-charts when we know they're rendered
     const subCharts = container.querySelectorAll('.cross-reference-sub-chart');
     expect(subCharts.length).toBe(3); // Should have one for each answer
+    
+    // Make sure subCharts are clickable elements
+    if (subCharts.length === 0) {
+      throw new Error('No sub-charts found');
+    }
     
     // Click on the first sub-chart (Red)
     fireEvent.click(subCharts[0]);
     
-    // Explanatory text should appear
-    expect(screen.getByText(/Showing results for Red voters/)).toBeInTheDocument();
+    // Wait for the explanatory text to appear (may take a render cycle)
+    await waitFor(() => {
+      expect(screen.getByText(/Showing results for Red voters/)).toBeInTheDocument();
+    });
     
-    // The sub-chart should have the 'is-active' class
-    expect(subCharts[0].classList.contains('is-active')).toBe(true);
+    // Need to re-query the DOM after the click event as React may have re-rendered
+    const updatedSubCharts = container.querySelectorAll('.cross-reference-sub-chart');
+    expect(updatedSubCharts[0].classList.contains('is-active')).toBe(true);
   });
 
   it('should display cross-reference selector with multiple cross-references', async () => {
