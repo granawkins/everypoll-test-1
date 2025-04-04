@@ -15,26 +15,70 @@ body {
 .app-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 20px;
   position: relative;
   z-index: 2;
 }
 
 .app-header {
-  text-align: center;
-  margin-bottom: 40px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 15px 20px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 20px;
+  z-index: 10;
+}
+
+.app-header-title {
+  flex: 1;
+  min-width: 200px;
 }
 
 .app-header h1 {
-  font-size: 2.5rem;
-  margin-bottom: 8px;
+  font-size: 2.2rem;
+  margin-bottom: 5px;
   color: #2a2a2a;
 }
 
 .app-subtitle {
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: #666;
-  margin-bottom: 20px;
+}
+
+.app-header-search {
+  flex: 2;
+  padding: 0 20px;
+}
+
+.app-search-input {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 0.95rem;
+  background-color: #f8f8f8;
+  transition: all 0.2s ease;
+}
+
+.app-search-input:focus {
+  outline: none;
+  border-color: #4a90e2;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+}
+
+.app-header-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex: 1;
+  min-width: 150px;
 }
 
 .app-content {
@@ -62,12 +106,81 @@ body {
   border-radius: 8px;
 }
 
-.app-no-polls {
+/* Feed Component Styles */
+.feed {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  padding-bottom: 40px;
+}
+
+.feed-loading {
   text-align: center;
   padding: 40px;
   background-color: white;
   border-radius: 12px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.feed-error {
+  text-align: center;
+  padding: 30px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  color: #e53935;
+  margin-bottom: 20px;
+}
+
+.feed-empty {
+  text-align: center;
+  padding: 40px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.feed-loading-more {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+}
+
+.feed-load-more-error {
+  text-align: center;
+  padding: 15px;
+  background-color: #fff4f4;
+  border: 1px solid #ffdddd;
+  border-radius: 8px;
+  color: #e53935;
+  margin: 10px 0;
+}
+
+.feed-load-more-error button {
+  background-color: #e53935;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 15px;
+  margin-top: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.feed-load-more-error button:hover {
+  background-color: #d32f2f;
+}
+
+.feed-end {
+  text-align: center;
+  padding: 20px;
+  color: #888;
+  border-top: 1px dashed #ddd;
+  margin-top: 20px;
 }
 
 /* PollCard Component Styles */
@@ -76,10 +189,14 @@ body {
   border-radius: 12px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   padding: 20px;
-  margin: 20px auto;
-  max-width: 600px;
   width: 100%;
   overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.poll-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .poll-card-loading,
@@ -447,4 +564,29 @@ body {
 .cross-reference-selector-answer {
   font-size: 0.8rem;
   color: #666;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+  
+  .app-header-title,
+  .app-header-search,
+  .app-header-actions {
+    width: 100%;
+    min-width: unset;
+    padding: 0;
+  }
+  
+  .app-header-title {
+    text-align: center;
+  }
+  
+  .app-header-actions {
+    justify-content: center;
+  }
 }
