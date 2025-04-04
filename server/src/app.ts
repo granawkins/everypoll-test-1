@@ -2,7 +2,9 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
+import cookieParser from 'cookie-parser';
 import { db } from './database';
+import { authRoutes, authenticate } from './auth';
 
 export const app = express();
 export const PORT = process.env.PORT || 5000;
@@ -15,14 +17,24 @@ if (!fs.existsSync(dataDir)) {
 }
 
 // Middleware
-app.use(cors()); // Enable CORS for frontend communication
+app.use(cors({ 
+  origin: process.env.NODE_ENV === 'production' 
+    ? 'https://everypoll.com' 
+    : 'http://localhost:5173',
+  credentials: true // Allow cookies to be sent with requests
+})); 
 app.use(express.json()); // Parse JSON bodies
+app.use(cookieParser()); // Parse cookies
+app.use(authenticate); // Attach user to request or create anonymous user
 app.use(express.static(CLIENT_DIST_PATH)); // Serve static files from client/dist
 
-// Basic route
+// API routes
 app.get('/api', (req: Request, res: Response) => {
   res.json({ message: 'Welcome to the EveryPoll API!' });
 });
+
+// Auth routes
+app.use('/api/auth', authRoutes);
 
 // Interface for database table info
 interface TableInfo {
@@ -45,7 +57,33 @@ app.get('/api/status', (req: Request, res: Response) => {
   });
 });
 
-// Serve React app
+// Test protected route
+app.get('/api/protected', (req: Request, res: Response) => {
+  // This route is just to verify that authentication is working
+  // It doesn't require the requireAuth middleware, so it will work for all users,
+  // but it will return different responses based on authentication status
+  
+  if (req.isAuthenticated) {
+    return res.json({
+      message: 'You are authenticated!',
+      user: {
+        id: req.user?.id,
+        email: req.user?.email,
+        name: req.user?.name
+      }
+    });
+  }
+  
+  res.json({
+    message: 'You are not authenticated.',
+    user: {
+      id: req.user?.id,
+      anonymous: true
+    }
+  });
+});
+
+// Serve React app - must be after all API routes
 app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIST_PATH, 'index.html'));
 });
