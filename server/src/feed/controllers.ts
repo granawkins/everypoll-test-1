@@ -9,6 +9,7 @@ import { dbUtils } from '../database';
  * - offset: Number of polls to skip (default: 0)
  * - q: Search query (optional)
  * - sort: Sort order - 'newest' or 'oldest' (default: 'newest')
+ * - authorId: Filter by author ID (optional)
  */
 export const getFeed = async (
   req: Request,
@@ -21,6 +22,7 @@ export const getFeed = async (
     const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
     const query = req.query.q as string | undefined;
     const sortBy = (req.query.sort as 'newest' | 'oldest' | undefined) || 'newest';
+    const authorId = req.query.authorId as string | undefined;
     
     // Validate pagination parameters
     if (isNaN(limit) || limit < 1 || limit > 50) {
@@ -48,12 +50,25 @@ export const getFeed = async (
       return;
     }
     
+    // Validate authorId if provided
+    if (authorId) {
+      const author = dbUtils.getUserById(authorId);
+      if (!author) {
+        res.status(404).json({
+          error: 'Author not found',
+          message: `No user found with ID: ${authorId}`
+        });
+        return;
+      }
+    }
+    
     // Get polls from database
     const result = dbUtils.getPolls({
       limit,
       offset,
       sortBy,
-      query
+      query,
+      authorId
     });
     
     // Enhance poll data with author info

@@ -196,6 +196,81 @@ body {
   border-radius: 8px;
 }
 
+/* User Profile Styles */
+.user-profile {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.user-profile-header {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-avatar-large {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #4a90e2;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 600;
+}
+
+.user-name {
+  font-size: 2rem;
+  color: #333;
+  margin: 0;
+}
+
+.user-profile-content {
+  width: 100%;
+}
+
+.user-polls-title {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.user-profile-loading,
+.user-profile-error,
+.user-profile-not-found {
+  text-align: center;
+  padding: 40px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.user-profile-error {
+  color: #e53935;
+}
+
+/* Poll author link */
+.poll-author-link {
+  color: #4a90e2;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.poll-author-link:hover {
+  color: #2c6cb9;
+  text-decoration: underline;
+}
+
 /* Feed Component Styles */
 .feed {
   display: flex;

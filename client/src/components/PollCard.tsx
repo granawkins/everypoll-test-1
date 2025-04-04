@@ -468,7 +468,10 @@ const PollCard: React.FC<PollCardProps> = ({ pollId, pollData: initialPollData }
       <div className="poll-card-header">
         <h2 className="poll-question">{pollData.poll.question}</h2>
         <div className="poll-author">
-          by {pollData.author.name || 'Anonymous'}
+          by {' '}
+          <a href={`/user/${pollData.author.id}`} className="poll-author-link">
+            {pollData.author.name || 'Anonymous'}
+          </a>
         </div>
       </div>
 

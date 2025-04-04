@@ -5,6 +5,7 @@ import Feed from './components/Feed';
 import Header from './components/Header';
 import CreatePoll from './components/CreatePoll';
 import PollCard from './components/PollCard';
+import UserProfile from './components/UserProfile';
 
 function App() {
   const [message, setMessage] = useState<string | null>(null);
@@ -93,6 +94,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/create" element={<CreatePoll />} />
             <Route path="/poll/:id" element={<PollPage />} />
+            <Route path="/user/:id" element={<UserProfile />} />
             {/* Redirect any other routes to the home page */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
