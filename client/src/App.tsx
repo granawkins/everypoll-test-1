@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Background from './components/Background';
 import Feed from './components/Feed';
+import Header from './components/Header';
 
 function App() {
   const [message, setMessage] = useState<string | null>(null);
@@ -56,26 +57,10 @@ function App() {
     <>
       <Background />
       <div className="app-container">
-        <header className="app-header">
-          <div className="app-header-title">
-            <h1>EveryPoll</h1>
-            <p className="app-subtitle">Vote, compare, discover</p>
-          </div>
-          
-          <div className="app-header-search">
-            <input
-              type="text"
-              placeholder="Search polls..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="app-search-input"
-            />
-          </div>
-          
-          <div className="app-header-actions">
-            {/* Placeholder for login/user avatar and create poll button */}
-          </div>
-        </header>
+        <Header 
+          searchQuery={searchQuery} 
+          onSearchChange={handleSearchChange} 
+        />
 
         <main className="app-content">
           {loading && !message ? (
