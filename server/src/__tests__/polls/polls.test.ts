@@ -211,6 +211,167 @@ describe('Poll API Endpoints', () => {
     });
   });
 
+  describe('Cross-Reference Functionality', () => {
+    let pollA: { poll: any; answers: any[] }; // Main poll
+    let pollB: { poll: any; answers: any[] }; // First cross-reference poll
+    let pollC: { poll: any; answers: any[] }; // Second cross-reference poll
+    let users: User[] = []; // Array of test users
+    let userTokens: string[] = []; // Auth tokens for test users
+
+    beforeEach(async () => {
+      // Reset users array
+      users = [];
+      userTokens = [];
+
+      // Create multiple users for voting
+      for (let i = 0; i < 6; i++) {
+        const timestamp = Date.now();
+        const userEmail = `xref-user-${i}-${timestamp}@example.com`;
+        const user = dbUtils.createUser(userEmail, `XRef User ${i}`);
+        users.push(user);
+        userTokens.push(createToken(user));
+      }
+
+      // Create poll A (the main poll being queried)
+      pollA = dbUtils.createPoll(
+        testUser.id,
+        'Do you prefer cats or dogs?',
+        ['Cats', 'Dogs']
+      );
+
+      // Create poll B (first cross-reference poll)
+      pollB = dbUtils.createPoll(
+        testUser.id,
+        'Are you a morning or night person?',
+        ['Morning Person', 'Night Owl']
+      );
+
+      // Create poll C (second cross-reference poll)
+      pollC = dbUtils.createPoll(
+        testUser.id,
+        'How do you like your coffee?',
+        ['Black', 'With Milk', 'With Sugar', 'With Both']
+      );
+
+      // Create voting patterns that will show clear cross-reference results:
+      
+      // First 3 users vote for Cats on Poll A
+      // Last 3 users vote for Dogs on Poll A
+      for (let i = 0; i < 3; i++) {
+        dbUtils.createVote(users[i].id, pollA.poll.id, pollA.answers[0].id); // Cats
+        dbUtils.createVote(users[i + 3].id, pollA.poll.id, pollA.answers[1].id); // Dogs
+      }
+
+      // For Poll B (Morning/Night):
+      // Users 0, 2, 4 vote Morning (mix of cat and dog lovers)
+      // Users 1, 3, 5 vote Night Owl (mix of cat and dog lovers)
+      for (let i = 0; i < 6; i++) {
+        const answerIndex = i % 2; // Even users vote Morning, Odd users vote Night
+        dbUtils.createVote(users[i].id, pollB.poll.id, pollB.answers[answerIndex].id);
+      }
+
+      // For Poll C (Coffee):
+      // Each user votes differently to create distinct patterns
+      for (let i = 0; i < 6; i++) {
+        const answerIndex = i % 4; // Each user has different coffee preference
+        dbUtils.createVote(users[i].id, pollC.poll.id, pollC.answers[answerIndex].id);
+      }
+    });
+
+    it('should return poll with cross-reference data when valid parameters are provided', async () => {
+      // Query poll A with cross-reference to poll B, answer "Morning Person"
+      const response = await request(app)
+        .get(`/api/poll/${pollA.poll.id}?p1=${pollB.poll.id}&a1=${pollB.answers[0].id}`)
+        .expect(200);
+
+      // Check response structure
+      expect(response.body).toHaveProperty('crossReferences');
+      expect(response.body.crossReferences).toHaveLength(1);
+      
+      // Check cross-reference data
+      const xref = response.body.crossReferences[0];
+      expect(xref).toHaveProperty('pollId', pollB.poll.id);
+      expect(xref).toHaveProperty('answerId', pollB.answers[0].id);
+      expect(xref).toHaveProperty('poll');
+      expect(xref).toHaveProperty('answer');
+      expect(xref).toHaveProperty('voteCounts');
+      
+      // Check cross-reference poll and answer details
+      expect(xref.poll.question).toBe('Are you a morning or night person?');
+      expect(xref.answer.text).toBe('Morning Person');
+      
+      // Check vote counts are filtered correctly
+      // Among morning people, we should see votes for both cats and dogs
+      expect(Object.keys(xref.voteCounts).length).toBeGreaterThan(0);
+    });
+
+    it('should return different results for different cross-referenced answers', async () => {
+      // Query poll A with cross-reference to poll B, answer "Morning Person"
+      const responseMorning = await request(app)
+        .get(`/api/poll/${pollA.poll.id}?p1=${pollB.poll.id}&a1=${pollB.answers[0].id}`)
+        .expect(200);
+
+      // Query poll A with cross-reference to poll B, answer "Night Owl"
+      const responseNight = await request(app)
+        .get(`/api/poll/${pollA.poll.id}?p1=${pollB.poll.id}&a1=${pollB.answers[1].id}`)
+        .expect(200);
+
+      // Get the vote counts for both queries
+      const morningVoteCounts = responseMorning.body.crossReferences[0].voteCounts;
+      const nightVoteCounts = responseNight.body.crossReferences[0].voteCounts;
+
+      // Verify that the vote counts are different
+      expect(morningVoteCounts).not.toEqual(nightVoteCounts);
+    });
+
+    it('should support multiple cross-references', async () => {
+      // Query poll A with cross-references to both poll B and poll C
+      const response = await request(app)
+        .get(`/api/poll/${pollA.poll.id}?p1=${pollB.poll.id}&a1=${pollB.answers[0].id}&p2=${pollC.poll.id}&a2=${pollC.answers[0].id}`)
+        .expect(200);
+
+      // Check response structure
+      expect(response.body).toHaveProperty('crossReferences');
+      expect(response.body.crossReferences).toHaveLength(2);
+      
+      // Check first cross-reference (Poll B)
+      expect(response.body.crossReferences[0].pollId).toBe(pollB.poll.id);
+      expect(response.body.crossReferences[0].answerId).toBe(pollB.answers[0].id);
+      
+      // Check second cross-reference (Poll C)
+      expect(response.body.crossReferences[1].pollId).toBe(pollC.poll.id);
+      expect(response.body.crossReferences[1].answerId).toBe(pollC.answers[0].id);
+    });
+
+    it('should return error for invalid cross-reference poll ID', async () => {
+      const response = await request(app)
+        .get(`/api/poll/${pollA.poll.id}?p1=non-existent-poll-id&a1=${pollB.answers[0].id}`)
+        .expect(400);
+
+      expect(response.body).toHaveProperty('error', 'Invalid cross-reference');
+      expect(response.body.message).toContain('not found');
+    });
+
+    it('should return error for invalid cross-reference answer ID', async () => {
+      const response = await request(app)
+        .get(`/api/poll/${pollA.poll.id}?p1=${pollB.poll.id}&a1=non-existent-answer-id`)
+        .expect(400);
+
+      expect(response.body).toHaveProperty('error', 'Invalid cross-reference');
+      expect(response.body.message).toContain('does not belong to poll');
+    });
+
+    it('should skip cross-reference pairs with missing parameters', async () => {
+      // Missing answer ID
+      const response = await request(app)
+        .get(`/api/poll/${pollA.poll.id}?p1=${pollB.poll.id}`)
+        .expect(200);
+
+      // Should not have cross-references
+      expect(response.body).not.toHaveProperty('crossReferences');
+    });
+  });
+
   describe('POST /api/poll/:id/vote', () => {
     let pollId: string;
     let answerId: string;
