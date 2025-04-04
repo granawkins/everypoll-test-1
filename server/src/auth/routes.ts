@@ -75,7 +75,9 @@ router.get('/login', (req: Request, res: Response) => {
  */
 router.get('/callback', async (req: Request, res: Response) => {
   try {
-    const { code, state, error } = req.query;
+    const { code, error } = req.query;
+    // Note: In a production app, we would validate the state parameter
+    // to prevent CSRF attacks, but we're omitting that for simplicity
     
     // Handle error from Google
     if (error) {

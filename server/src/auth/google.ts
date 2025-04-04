@@ -26,6 +26,18 @@ export interface GoogleUserInfo {
 }
 
 /**
+ * Google OAuth tokens returned after authentication
+ */
+export interface GoogleTokens {
+  access_token: string;
+  refresh_token?: string;
+  expiry_date?: number;
+  id_token?: string;
+  token_type?: string;
+  scope?: string;
+}
+
+/**
  * Generates the Google OAuth URL for authentication
  * @param state Optional state parameter to track the user's session
  * @returns URL to redirect the user to for Google login
@@ -49,10 +61,10 @@ export function getGoogleAuthUrl(state?: string): string {
  * @param code Authorization code from Google redirect
  * @returns Object containing tokens and expiry information
  */
-export async function getTokensFromCode(code: string): Promise<{ tokens: any; error?: string }> {
+export async function getTokensFromCode(code: string): Promise<{ tokens: GoogleTokens | null; error?: string }> {
   try {
     const { tokens } = await oauth2Client.getToken(code);
-    return { tokens };
+    return { tokens: tokens as GoogleTokens };
   } catch (error) {
     console.error('Error getting tokens from code:', error);
     return { tokens: null, error: 'Failed to exchange authorization code for tokens' };
