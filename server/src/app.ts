@@ -58,13 +58,13 @@ app.get('/api/status', (req: Request, res: Response) => {
 });
 
 // Test protected route
-app.get('/api/protected', (req: Request, res: Response) => {
+app.get('/api/protected', (req: Request, res: Response): void => {
   // This route is just to verify that authentication is working
   // It doesn't require the requireAuth middleware, so it will work for all users,
   // but it will return different responses based on authentication status
   
   if (req.isAuthenticated) {
-    return res.json({
+    res.json({
       message: 'You are authenticated!',
       user: {
         id: req.user?.id,
@@ -72,6 +72,7 @@ app.get('/api/protected', (req: Request, res: Response) => {
         name: req.user?.name
       }
     });
+    return;
   }
   
   res.json({
@@ -84,7 +85,7 @@ app.get('/api/protected', (req: Request, res: Response) => {
 });
 
 // Serve React app - must be after all API routes
-app.get('*', (req: Request, res: Response) => {
+app.get('*', (req: Request, res: Response): void => {
   res.sendFile(path.join(CLIENT_DIST_PATH, 'index.html'));
 });
 

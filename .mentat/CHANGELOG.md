@@ -1,5 +1,32 @@
 # EveryPoll Changelog
 
+## Step 3: Google OAuth Integration (2025-04-04)
+
+- Added Google OAuth integration:
+  - Installed google-auth-library for OAuth functionality
+  - Implemented direct fetch requests without Passport.js
+  - Created configurable Google client credentials
+- Added new authentication routes:
+  - GET /api/auth/login: Redirects to Google's OAuth consent screen
+  - GET /api/auth/callback: Handles response from Google after authentication
+- Implemented Google OAuth utilities:
+  - Generation of OAuth URLs with proper scopes
+  - Token exchange functionality
+  - User profile information retrieval
+- Enhanced user management:
+  - Created functions to create/update users based on Google profile
+  - Maintained compatibility with existing anonymous user system
+  - Integrated with JWT token generation
+- Secured authentication flow:
+  - Added state parameter for CSRF protection
+  - Implemented proper error handling for all OAuth steps
+  - Used HTTP-only cookies for secure token storage
+- Created comprehensive tests:
+  - Google login redirect functionality
+  - OAuth callback processing with various scenarios
+  - User creation and update from Google profiles
+  - Error handling for different failure scenarios
+
 ## Step 2: Basic JWT Authentication (2025-04-04)
 
 - Added minimal dependencies:

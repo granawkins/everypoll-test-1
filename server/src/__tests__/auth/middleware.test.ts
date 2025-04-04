@@ -48,9 +48,11 @@ describe('Authentication Middleware', () => {
     // Create a test app
     testApp = createTestApp();
     
-    // Create a test user with a domain specific to this test file
-    // to avoid conflicts with other test files
-    testUser = dbUtils.createUser('user@middleware-test.com', 'Middleware Test User');
+    // Create a test user with a unique email to avoid unique constraint violations
+    // Each test will get its own user with a timestamp-based email
+    const timestamp = Date.now();
+    const uniqueEmail = `user-${timestamp}@middleware-test.com`;
+    testUser = dbUtils.createUser(uniqueEmail, 'Middleware Test User');
     userToken = createToken(testUser);
   });
 

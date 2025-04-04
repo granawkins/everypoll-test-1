@@ -17,9 +17,11 @@ describe('Authentication System', () => {
 
   // Before each test, create a test user
   beforeEach(() => {
-    // Create a test user with a domain specific to this test file
-    // to avoid conflicts with other test files
-    testUser = dbUtils.createUser('test@auth-test.com', 'Auth Test User');
+    // Create a test user with a unique email to avoid unique constraint violations
+    // Each test will get its own user with a timestamp-based email
+    const timestamp = Date.now();
+    const uniqueEmail = `test-${timestamp}@auth-test.com`;
+    testUser = dbUtils.createUser(uniqueEmail, 'Auth Test User');
     userToken = createToken(testUser);
   });
 
