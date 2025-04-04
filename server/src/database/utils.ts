@@ -31,6 +31,12 @@ export interface Vote {
   created_at: string;
 }
 
+// Internal types for query results
+interface VoteCountRow {
+  answer_id: string;
+  count: number;
+}
+
 /**
  * Database utility class with CRUD operations for all entities
  */
@@ -95,7 +101,7 @@ export class DatabaseUtils {
     // Only update fields that are provided
     if (email !== undefined || name !== undefined) {
       const updates: string[] = [];
-      const params: any[] = [];
+      const params: (string | undefined)[] = [];
       
       if (email !== undefined) {
         updates.push('email = ?');
@@ -269,11 +275,11 @@ export class DatabaseUtils {
       FROM Votes
       WHERE poll_id = ?
       GROUP BY answer_id
-    `).all(pollId);
+    `).all(pollId) as VoteCountRow[];
     
     const voteCounts: Record<string, number> = {};
     
-    rows.forEach((row: any) => {
+    rows.forEach((row) => {
       voteCounts[row.answer_id] = row.count;
     });
     
@@ -300,11 +306,11 @@ export class DatabaseUtils {
       AND v2.poll_id = ?
       AND v2.answer_id = ?
       GROUP BY v1.answer_id
-    `).all(pollId, crossPollId, crossAnswerId);
+    `).all(pollId, crossPollId, crossAnswerId) as VoteCountRow[];
     
     const voteCounts: Record<string, number> = {};
     
-    rows.forEach((row: any) => {
+    rows.forEach((row) => {
       voteCounts[row.answer_id] = row.count;
     });
     

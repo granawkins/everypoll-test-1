@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
-import { db, dbUtils } from './database';
+import { db } from './database';
 
 export const app = express();
 export const PORT = process.env.PORT || 5000;
@@ -24,18 +24,23 @@ app.get('/api', (req: Request, res: Response) => {
   res.json({ message: 'Welcome to the EveryPoll API!' });
 });
 
+// Interface for database table info
+interface TableInfo {
+  name: string;
+}
+
 // Database status route (for testing)
 app.get('/api/status', (req: Request, res: Response) => {
   // Check if we can query the database
   const tables = db.prepare(`
     SELECT name FROM sqlite_master 
     WHERE type='table' AND name NOT LIKE 'sqlite_%'
-  `).all();
+  `).all() as TableInfo[];
   
   // Return database status
   res.json({
     status: 'online',
-    tables: tables.map((t: any) => t.name),
+    tables: tables.map((t) => t.name),
     message: 'Database is ready'
   });
 });

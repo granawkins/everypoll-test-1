@@ -10,6 +10,11 @@ interface Migration {
   sql: string;
 }
 
+// Interface for a migration row from database
+interface MigrationRow {
+  id: number;
+}
+
 /**
  * Creates the migrations table if it doesn't exist
  * @param db Database instance
@@ -33,9 +38,9 @@ function getAppliedMigrations(db: Database.Database): number[] {
   createMigrationsTable(db);
   
   const stmt = db.prepare('SELECT id FROM migrations ORDER BY id');
-  const rows = stmt.all();
+  const rows = stmt.all() as MigrationRow[];
   
-  return rows.map((row: any) => row.id);
+  return rows.map((row) => row.id);
 }
 
 /**

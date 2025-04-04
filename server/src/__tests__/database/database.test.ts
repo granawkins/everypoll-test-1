@@ -2,9 +2,20 @@ import fs from 'fs';
 import path from 'path';
 import { DB_CONFIG } from '../../database/config';
 import { reinitializeTestDatabase } from '../../database/init';
-import { DatabaseUtils } from '../../database/utils';
+import { DatabaseUtils, User, Poll, Answer, Vote } from '../../database/utils';
 import Database from 'better-sqlite3';
 import { applyMigrations } from '../../database/migrations';
+
+// Interfaces used for testing
+interface TableInfo {
+  name: string;
+}
+
+interface MigrationRecord {
+  id: number;
+  name: string;
+  applied_at: string;
+}
 
 // Create a simple test migration to test migrations system
 const createTestMigration = (id: number, name: string, sql: string): void => {
@@ -62,10 +73,10 @@ describe('Database Tests', () => {
       const tables = db.prepare(`
         SELECT name FROM sqlite_master 
         WHERE type='table' AND name NOT LIKE 'sqlite_%'
-      `).all();
+      `).all() as TableInfo[];
       
       // Extract table names
-      const tableNames = tables.map((t: any) => t.name);
+      const tableNames = tables.map((t) => t.name);
       
       // Check for required tables
       expect(tableNames).toContain('Users');
@@ -97,14 +108,14 @@ describe('Database Tests', () => {
       const tables = db.prepare(`
         SELECT name FROM sqlite_master 
         WHERE type='table' AND name LIKE 'test_table_%'
-      `).all();
+      `).all() as TableInfo[];
       
-      const tableNames = tables.map((t: any) => t.name);
+      const tableNames = tables.map((t) => t.name);
       expect(tableNames).toContain('test_table_1');
       expect(tableNames).toContain('test_table_2');
       
       // Check migrations table
-      const migrations = db.prepare('SELECT * FROM migrations ORDER BY id').all();
+      const migrations = db.prepare('SELECT * FROM migrations ORDER BY id').all() as MigrationRecord[];
       expect(migrations.length).toBe(2);
       expect(migrations[0].id).toBe(1);
       expect(migrations[1].id).toBe(2);
@@ -178,7 +189,7 @@ describe('Database Tests', () => {
   });
   
   describe('Poll Operations', () => {
-    let user: any;
+    let user: User;
     
     beforeEach(() => {
       user = dbUtils.createUser('poll@example.com', 'Poll User');
@@ -201,7 +212,7 @@ describe('Database Tests', () => {
     });
     
     it('should get poll by ID', () => {
-      const { poll, answers } = dbUtils.createPoll(
+      const { poll } = dbUtils.createPoll(
         user.id,
         'Test question?',
         ['Answer 1', 'Answer 2']
@@ -270,10 +281,10 @@ describe('Database Tests', () => {
   });
   
   describe('Vote Operations', () => {
-    let user1: any;
-    let user2: any;
-    let poll: any;
-    let answers: any[];
+    let user1: User;
+    let user2: User;
+    let poll: Poll;
+    let pollAnswers: Answer[];
     
     beforeEach(() => {
       user1 = dbUtils.createUser('voter1@example.com', 'Voter 1');
@@ -286,52 +297,52 @@ describe('Database Tests', () => {
       );
       
       poll = result.poll;
-      answers = result.answers;
+      pollAnswers = result.answers;
     });
     
     it('should create a vote', () => {
-      const vote = dbUtils.createVote(user2.id, poll.id, answers[1].id);
+      const vote = dbUtils.createVote(user2.id, poll.id, pollAnswers[1].id);
       
       expect(vote).not.toBeNull();
       expect(vote!.user_id).toBe(user2.id);
       expect(vote!.poll_id).toBe(poll.id);
-      expect(vote!.answer_id).toBe(answers[1].id);
+      expect(vote!.answer_id).toBe(pollAnswers[1].id);
     });
     
     it('should prevent duplicate votes', () => {
       // First vote is successful
-      const vote1 = dbUtils.createVote(user2.id, poll.id, answers[0].id);
+      const vote1 = dbUtils.createVote(user2.id, poll.id, pollAnswers[0].id);
       expect(vote1).not.toBeNull();
       
       // Second vote should fail
-      const vote2 = dbUtils.createVote(user2.id, poll.id, answers[1].id);
+      const vote2 = dbUtils.createVote(user2.id, poll.id, pollAnswers[1].id);
       expect(vote2).toBeNull();
     });
     
     it('should get vote counts', () => {
       // Create several votes
-      dbUtils.createVote(user1.id, poll.id, answers[0].id);
-      dbUtils.createVote(user2.id, poll.id, answers[1].id);
+      dbUtils.createVote(user1.id, poll.id, pollAnswers[0].id);
+      dbUtils.createVote(user2.id, poll.id, pollAnswers[1].id);
       
       // Create another user and vote
       const user3 = dbUtils.createUser('voter3@example.com', 'Voter 3');
-      dbUtils.createVote(user3.id, poll.id, answers[0].id);
+      dbUtils.createVote(user3.id, poll.id, pollAnswers[0].id);
       
       // Get vote counts
       const counts = dbUtils.getVoteCounts(poll.id);
       
-      expect(counts[answers[0].id]).toBe(2);
-      expect(counts[answers[1].id]).toBe(1);
-      expect(counts[answers[2].id]).toBeUndefined();
+      expect(counts[pollAnswers[0].id]).toBe(2);
+      expect(counts[pollAnswers[1].id]).toBe(1);
+      expect(counts[pollAnswers[2].id]).toBeUndefined();
     });
     
     it('should get user vote', () => {
-      dbUtils.createVote(user1.id, poll.id, answers[0].id);
+      dbUtils.createVote(user1.id, poll.id, pollAnswers[0].id);
       
       const vote = dbUtils.getUserVote(user1.id, poll.id);
       
       expect(vote).not.toBeNull();
-      expect(vote!.answer_id).toBe(answers[0].id);
+      expect(vote!.answer_id).toBe(pollAnswers[0].id);
     });
     
     it('should return null for non-existent vote', () => {
@@ -342,13 +353,13 @@ describe('Database Tests', () => {
   });
   
   describe('Cross-Reference Functionality', () => {
-    let user1: any;
-    let user2: any;
-    let user3: any;
-    let pollA: any;
-    let pollB: any;
-    let answersA: any[];
-    let answersB: any[];
+    let user1: User;
+    let user2: User;
+    let user3: User;
+    let pollA: Poll;
+    let pollB: Poll;
+    let answersA: Answer[];
+    let answersB: Answer[];
     
     beforeEach(() => {
       user1 = dbUtils.createUser('cross1@example.com', 'Cross User 1');
