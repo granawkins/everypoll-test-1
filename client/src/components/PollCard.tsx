@@ -209,7 +209,10 @@ const PollCard: React.FC<PollCardProps> = ({ pollId, pollData: initialPollData }
     setCrossReferenceSearchResults([]);
   };
 
-  // Vote on cross-reference poll
+  // This function would be used to vote on cross-referenced polls that
+  // the user hasn't voted on yet. This feature will be implemented in a future step.
+  // For now, users can only cross-reference with polls they've already voted on.
+  /* 
   const handleCrossReferenceVote = async (pollId: string, answerId: string) => {
     if (!pollData || isVoting) return;
     
@@ -254,6 +257,7 @@ const PollCard: React.FC<PollCardProps> = ({ pollId, pollData: initialPollData }
       setIsVoting(false);
     }
   };
+  */
 
   // Calculate total votes
   const getTotalVotes = (voteCounts: Record<string, number> = {}) => {
