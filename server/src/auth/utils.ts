@@ -51,7 +51,10 @@ export function verifyToken(token: string): JwtPayload | null {
   try {
     return jwt.verify(token, JWT_SECRET) as JwtPayload;
   } catch (error) {
-    console.error('JWT verification error:', error);
+    // Only log in non-test environments to avoid CI test failures
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('JWT verification error:', error);
+    }
     return null;
   }
 }
