@@ -1,5 +1,28 @@
 # EveryPoll Changelog
 
+## Step 6: Cross-Reference Functionality (2025-04-04)
+
+- Enhanced poll retrieval endpoint to support cross-referencing:
+  - Added support for query parameters to specify cross-referenced polls and answers
+  - Implemented parsing and validation of cross-reference parameters
+  - Added ability to handle multiple levels of cross-referencing
+  - Returned segmented results based on cross-referenced poll answers
+- Implemented comprehensive error handling for cross-referencing:
+  - Validated existence of cross-referenced polls
+  - Verified answer IDs belong to the correct polls
+  - Provided clear error messages for invalid parameters
+  - Skipped incomplete cross-reference pairs gracefully
+- Created structured response format for cross-references:
+  - Included poll question and answer text for context
+  - Organized vote counts filtered by cross-referenced answer
+  - Maintained compatibility with existing poll retrieval functionality
+- Added comprehensive tests for cross-reference functionality:
+  - Tested basic cross-reference parameter handling
+  - Verified different results for different cross-referenced answers
+  - Confirmed multiple cross-references work correctly
+  - Validated error handling for invalid parameters
+  - Tested behavior with missing parameters
+
 ## Step 5: Voting System (2025-04-04)
 
 - Added voting functionality to polls:

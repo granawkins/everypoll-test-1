@@ -74,6 +74,8 @@ export const createPoll = async (
 
 /**
  * Gets a poll by ID, including answers and author info
+ * Supports cross-referencing with other polls via query parameters
+ * Format: /api/poll/:id?p1=pollId1&a1=answerId1&p2=pollId2&a2=answerId2
  */
 export const getPollById = async (
   req: Request,
@@ -114,7 +116,78 @@ export const getPollById = async (
       userVote = dbUtils.getUserVote(req.user.id, id);
     }
 
-    // Return the poll with answers, author, and vote counts
+    // Check for cross-reference parameters in the query string
+    const crossReferences: {
+      pollId: string;
+      answerId: string;
+      poll?: { id: string; question: string };
+      answer?: { id: string; text: string };
+      voteCounts?: Record<string, number>;
+    }[] = [];
+
+    // Parse cross-reference pairs (p1/a1, p2/a2, etc.)
+    const queryParams = req.query;
+    const pollParams = Object.keys(queryParams).filter(key => key.startsWith('p') && /^p\d+$/.test(key));
+    
+    for (const pollParam of pollParams) {
+      const index = pollParam.substring(1); // Extract the number from 'p1', 'p2', etc.
+      const answerParam = `a${index}`;
+      
+      const crossPollId = queryParams[pollParam] as string;
+      const crossAnswerId = queryParams[answerParam] as string;
+      
+      // Skip if either pollId or answerId is missing
+      if (!crossPollId || !crossAnswerId) {
+        continue;
+      }
+      
+      // Verify the cross-referenced poll exists
+      const crossPoll = dbUtils.getPollById(crossPollId);
+      if (!crossPoll) {
+        res.status(400).json({
+          error: 'Invalid cross-reference',
+          message: `Cross-referenced poll (${crossPollId}) not found`
+        });
+        return;
+      }
+      
+      // Verify the cross-referenced answer belongs to the cross-referenced poll
+      const answerBelongsToPoll = crossPoll.answers.some(answer => answer.id === crossAnswerId);
+      if (!answerBelongsToPoll) {
+        res.status(400).json({
+          error: 'Invalid cross-reference',
+          message: `Cross-referenced answer (${crossAnswerId}) does not belong to poll (${crossPollId})`
+        });
+        return;
+      }
+      
+      // Find the answer object for additional info
+      const crossAnswer = crossPoll.answers.find(answer => answer.id === crossAnswerId);
+      
+      // Get cross-referenced vote counts
+      const crossReferencedVoteCounts = dbUtils.getCrossReferencedVoteCounts(
+        id,
+        crossPollId,
+        crossAnswerId
+      );
+      
+      // Add to the collection of cross-references
+      crossReferences.push({
+        pollId: crossPollId,
+        answerId: crossAnswerId,
+        poll: {
+          id: crossPoll.poll.id,
+          question: crossPoll.poll.question
+        },
+        answer: {
+          id: crossAnswer!.id,
+          text: crossAnswer!.text
+        },
+        voteCounts: crossReferencedVoteCounts
+      });
+    }
+
+    // Return the poll with answers, author, vote counts, and cross-references
     res.json({
       poll: pollResult.poll,
       answers: pollResult.answers,
@@ -123,7 +196,8 @@ export const getPollById = async (
         name: author?.name
       },
       voteCounts,
-      userVote: userVote ? { answerId: userVote.answer_id } : null
+      userVote: userVote ? { answerId: userVote.answer_id } : null,
+      crossReferences: crossReferences.length > 0 ? crossReferences : undefined
     });
   } catch (error) {
     next(error);
