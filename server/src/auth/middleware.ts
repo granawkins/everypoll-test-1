@@ -2,18 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import { getUserFromToken, createAnonymousUser, AUTH_COOKIE_NAME } from './utils';
 import { User } from '../database/utils';
 
-// Augment Express Request interface to include user
-// Use module augmentation instead of namespace
-interface RequestWithUser extends Request {
-  user?: User;
-  isAuthenticated?: boolean;
-}
-
-// Update Express Request interface via module augmentation
+// Directly augment the Express Request interface
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
-    interface Request extends RequestWithUser {}
+    interface Request {
+      user?: User;
+      isAuthenticated?: boolean;
+    }
   }
 }
 
