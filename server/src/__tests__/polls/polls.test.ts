@@ -3,7 +3,7 @@ import { app } from '../../app';
 import { reinitializeTestDatabase } from '../../database/init';
 import { dbUtils } from '../../database';
 import { createToken, AUTH_COOKIE_NAME } from '../../auth';
-import { User } from '../../database/utils';
+import { User, Poll, Answer } from '../../database/utils';
 
 describe('Poll API Endpoints', () => {
   let testUser: User;
@@ -212,9 +212,9 @@ describe('Poll API Endpoints', () => {
   });
 
   describe('Cross-Reference Functionality', () => {
-    let pollA: { poll: any; answers: any[] }; // Main poll
-    let pollB: { poll: any; answers: any[] }; // First cross-reference poll
-    let pollC: { poll: any; answers: any[] }; // Second cross-reference poll
+    let pollA: { poll: Poll; answers: Answer[] }; // Main poll
+    let pollB: { poll: Poll; answers: Answer[] }; // First cross-reference poll
+    let pollC: { poll: Poll; answers: Answer[] }; // Second cross-reference poll
     let users: User[] = []; // Array of test users
     let userTokens: string[] = []; // Auth tokens for test users
 
