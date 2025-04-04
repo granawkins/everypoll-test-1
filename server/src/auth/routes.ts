@@ -23,8 +23,12 @@ router.get('/me', async (req: Request, res: Response) => {
     const token = req.cookies?.[AUTH_COOKIE_NAME];
     const user = await getCurrentUser(token);
     
-    // If we had to create a new anonymous user, set token in cookie
-    if (!token || !req.user) {
+    // Set a new cookie if:
+    // 1. No token was provided, OR
+    // 2. Token was invalid (checking if user.id differs from req.user.id), OR
+    // 3. For some reason req.user is not defined
+    const isInvalidToken = token && req.user && user.id !== req.user.id;
+    if (!token || isInvalidToken || !req.user) {
       const newToken = createToken(user);
       res.cookie(AUTH_COOKIE_NAME, newToken, COOKIE_OPTIONS);
     }
