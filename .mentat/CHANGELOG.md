@@ -1,5 +1,29 @@
 # EveryPoll Changelog
 
+## Step 4: Poll Creation and Viewing (2025-04-04)
+
+- Created poll controllers following layered architecture pattern:
+  - Implemented request validation and HTTP response handling
+  - Leveraged existing database utilities for data operations
+  - Used proper async/await patterns with error handling
+- Added poll creation endpoint with validation:
+  - POST /api/poll: Creates a new poll with answers
+  - Enforced poll requirements (2-10 answers, non-empty text)
+  - Protected endpoint requiring authentication
+- Added poll viewing endpoint with details:
+  - GET /api/poll/:id: Returns poll with answers, author info, and vote counts
+  - Included user's vote status when authenticated
+  - Provided appropriate error handling for invalid IDs
+- Integrated polls module with main application:
+  - Created modular exports for controllers and routes
+  - Added proper route middleware
+  - Used authentication middleware for protected routes
+- Implemented comprehensive testing:
+  - Poll creation with valid/invalid data
+  - Authentication requirements verification
+  - Poll retrieval with all required data
+  - Error cases for both endpoints
+
 ## Step 3: Google OAuth Integration (2025-04-04)
 
 - Added Google OAuth integration:

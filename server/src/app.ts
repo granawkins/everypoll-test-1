@@ -5,6 +5,7 @@ import fs from 'fs';
 import cookieParser from 'cookie-parser';
 import { db } from './database';
 import { authRoutes, authenticate } from './auth';
+import { pollRoutes } from './polls';
 
 export const app = express();
 export const PORT = process.env.PORT || 5000;
@@ -35,6 +36,9 @@ app.get('/api', (req: Request, res: Response) => {
 
 // Auth routes
 app.use('/api/auth', authRoutes);
+
+// Poll routes
+app.use('/api/poll', pollRoutes);
 
 // Interface for database table info
 interface TableInfo {
