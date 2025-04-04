@@ -37,9 +37,10 @@ interface FeedResponse {
 
 interface FeedProps {
   searchQuery?: string;
+  authorId?: string;
 }
 
-const Feed: React.FC<FeedProps> = ({ searchQuery }) => {
+const Feed: React.FC<FeedProps> = ({ searchQuery, authorId }) => {
   const [polls, setPolls] = useState<PollData[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -62,6 +63,10 @@ const Feed: React.FC<FeedProps> = ({ searchQuery }) => {
       
       if (searchQuery) {
         url += `&q=${encodeURIComponent(searchQuery)}`;
+      }
+
+      if (authorId) {
+        url += `&authorId=${encodeURIComponent(authorId)}`;
       }
 
       const response = await fetch(url);
@@ -91,14 +96,15 @@ const Feed: React.FC<FeedProps> = ({ searchQuery }) => {
         setInitialLoading(false);
       }
     }
-  }, [hasMore, offset, searchQuery, limit]);
+  }, [hasMore, offset, searchQuery, authorId, limit]);
 
-  // Fetch initial polls when component mounts or search query changes
+  // Fetch initial polls when component mounts or search/author params change
   useEffect(() => {
     setInitialLoading(true);
     setPolls([]);
+    setOffset(0);
     fetchPolls(true);
-  }, [fetchPolls, searchQuery]);
+  }, [fetchPolls, searchQuery, authorId]);
 
   // Set up intersection observer for infinite scrolling
   useEffect(() => {
@@ -133,9 +139,21 @@ const Feed: React.FC<FeedProps> = ({ searchQuery }) => {
   }
 
   if (polls.length === 0) {
+    let emptyMessage = 'No polls found.';
+    
+    if (searchQuery && authorId) {
+      emptyMessage += ' Try a different search term.';
+    } else if (searchQuery) {
+      emptyMessage += ' Try a different search term.';
+    } else if (authorId) {
+      emptyMessage += ' This user hasn\'t created any polls yet.';
+    } else {
+      emptyMessage += ' Create your first poll to get started!';
+    }
+    
     return (
       <div className="feed-empty">
-        <p>No polls found. {searchQuery ? 'Try a different search term.' : 'Create your first poll to get started!'}</p>
+        <p>{emptyMessage}</p>
       </div>
     );
   }

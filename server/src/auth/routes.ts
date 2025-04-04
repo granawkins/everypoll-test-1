@@ -11,6 +11,7 @@ import {
   getUserInfoFromToken, 
   createOrUpdateUserFromGoogle 
 } from './google';
+import { dbUtils } from '../database';
 
 const router = express.Router();
 
@@ -43,6 +44,47 @@ router.get('/me', async (req: Request, res: Response) => {
   } catch (error) {
     if (process.env.NODE_ENV !== 'test') {
       console.error('Error in /auth/me:', error);
+    }
+    res.status(500).json({ 
+      error: 'Server error',
+      message: 'An error occurred while processing your request' 
+    });
+  }
+});
+
+/**
+ * GET /api/auth/user/:id
+ * Returns public user information by ID
+ */
+router.get('/user/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({
+        error: 'Missing user ID',
+        message: 'User ID is required'
+      });
+    }
+    
+    const user = dbUtils.getUserById(id);
+    
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found',
+        message: `No user found with ID: ${id}`
+      });
+    }
+    
+    // Return only public user information
+    res.json({
+      id: user.id,
+      name: user.name,
+      // Don't include email for privacy reasons
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('Error in /auth/user/:id:', error);
     }
     res.status(500).json({ 
       error: 'Server error',

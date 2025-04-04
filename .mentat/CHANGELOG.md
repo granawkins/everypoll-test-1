@@ -1,5 +1,40 @@
 # EveryPoll Changelog
 
+## Step 13: User Profile (Non-Owner View) (2025-04-04)
+
+- Implemented user profile page to display public user information:
+  - Created UserProfile component to show user details and their created polls
+  - Added route to access user profiles at `/user/:id`
+  - Implemented user avatar display with first letter of name
+  - Created clean layout to display user information prominently
+  - Added descriptive headers to clarify content sections
+- Enhanced backend to support user profile functionality:
+  - Added `/api/auth/user/:id` endpoint to fetch public user information
+  - Updated feed controller to support filtering polls by author ID
+  - Implemented proper validation and error handling for user requests
+  - Ensured privacy by only returning necessary public user data
+- Added poll author linking throughout the application:
+  - Updated PollCard to include clickable links to author profiles
+  - Added styling for author links with hover effects
+  - Maintained consistent design language with the rest of the application
+- Created Feed component enhancements for user-specific polls:
+  - Added support for filtering polls by author ID
+  - Implemented custom empty state messages based on context
+  - Ensured pagination works correctly for user-specific polls
+  - Added proper error handling for no polls or API failures
+- Added comprehensive styling for profile pages:
+  - Created responsive profile header with large avatar
+  - Styled user information for clear visibility
+  - Implemented consistent loading, error, and empty states
+  - Ensured mobile-friendly design for all profile elements
+- Implemented extensive testing for UserProfile component:
+  - Verified loading states are displayed correctly
+  - Tested error handling for API failures
+  - Confirmed user information is displayed properly
+  - Validated polls created by user are shown in the feed
+  - Verified pagination works for user-specific polls
+  - Tested empty state when user has no polls
+
 ## Step 12: Poll Creation Screen (2025-04-04)
 
 - Created poll creation form with dynamic answer fields:
