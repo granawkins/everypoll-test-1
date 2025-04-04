@@ -304,28 +304,32 @@ describe('Poll API Endpoints', () => {
     });
 
     it('should prevent voting twice on the same poll', async () => {
-      const voteData = {
-        answerId: answerId
-      };
-
+      // Get the poll to access answer IDs
+      const pollResult = dbUtils.getPollById(pollId);
+      if (!pollResult) {
+        throw new Error('Test poll not found');
+      }
+      
+      // Get a different answer ID for the second vote attempt
+      const firstAnswerId = pollResult.answers[0].id;
+      const secondAnswerId = pollResult.answers[1].id; // Use a different but valid answer ID
+      
       // First vote should succeed
       await request(app)
         .post(`/api/poll/${pollId}/vote`)
         .set('Cookie', [`${AUTH_COOKIE_NAME}=${userToken}`])
-        .send(voteData)
+        .send({ answerId: firstAnswerId })
         .expect(201);
 
-      // Second vote should fail
+      // Second vote should fail with "Already voted" error
       const response = await request(app)
         .post(`/api/poll/${pollId}/vote`)
         .set('Cookie', [`${AUTH_COOKIE_NAME}=${userToken}`])
-        .send({
-          answerId: pollId // Try to vote for a different option
-        })
+        .send({ answerId: secondAnswerId })
         .expect(400);
 
       expect(response.body).toHaveProperty('error', 'Already voted');
-      expect(response.body).toHaveProperty('vote.answerId', answerId);
+      expect(response.body).toHaveProperty('vote.answerId', firstAnswerId);
     });
 
     it('should update vote counts correctly after multiple votes', async () => {
